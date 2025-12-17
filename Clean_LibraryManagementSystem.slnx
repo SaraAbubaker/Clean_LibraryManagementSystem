@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="Clean_LibraryManagementSystem/Clean_LibraryManagementSystem.csproj" />
+  <Folder Name="/Library Management/">
+    <Project Path="Clean_LibraryManagementSystem/Library.API.csproj" />
+  </Folder>
 </Solution>
