@@ -7,4 +7,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Library.Domain\Library.Domain.csproj" />
+    <ProjectReference Include="..\Library.Entities\Library.Entities.csproj" />
+    <ProjectReference Include="..\Library.Infrastructure\Library.Infrastructure.csproj" />
+    <ProjectReference Include="..\Library.Shared\Library.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
