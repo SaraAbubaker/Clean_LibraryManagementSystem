@@ -17,8 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<LibraryContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
-// Add services to the container.
+//Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -63,7 +62,7 @@ builder.Services.AddSingleton<IMessageLoggerService, MessageLoggerService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+//Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();

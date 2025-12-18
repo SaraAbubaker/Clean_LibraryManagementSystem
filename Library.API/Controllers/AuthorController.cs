@@ -1,6 +1,7 @@
 ﻿using Library.Services.Interfaces;
 using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Author;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

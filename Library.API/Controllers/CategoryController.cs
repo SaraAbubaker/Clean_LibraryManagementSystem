@@ -18,7 +18,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateCategory(CreateCategoryDto dto, [FromQuery] int userId)
+        public async Task<IActionResult> CreateCategory( CreateCategoryDto dto, [FromQuery] int userId)
         {
             try
             {
