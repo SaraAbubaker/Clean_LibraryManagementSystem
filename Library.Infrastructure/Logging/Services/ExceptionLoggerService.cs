@@ -1,9 +1,8 @@
-﻿using Library.Infrastructure.Logging.Interfaces;
+﻿
+using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Mongo;
 using Library.Shared.Helpers;
-using System.ComponentModel.DataAnnotations;
-using LogLevel = Library.Infrastructure.Logging.Models.LogLevel;
 
 namespace Library.Infrastructure.Logging.Services
 {
@@ -16,20 +15,24 @@ namespace Library.Infrastructure.Logging.Services
             _repo = new MongoRepository<ExceptionLog>(context, "ExceptionLogs");
         }
 
-        public async Task LogExceptionAsync(Exception ex, string serviceName)
+        public async Task LogExceptionAsync(Exception ex, string serviceName, MyLogLevel level = MyLogLevel.Exception)
         {
+            if (level != MyLogLevel.Warning && level != MyLogLevel.Exception)
+            {
+                return;
+            }
+
             var log = new ExceptionLog
             {
                 Guid = Guid.NewGuid(),
                 CreatedAt = DateTime.Now,
-                Level = LogLevel.Exception,
+                Level = level,
                 ServiceName = serviceName,
                 ExceptionMessage = ex.Message,
                 StackTrace = ex.StackTrace ?? string.Empty
             };
 
             Validate.ValidateModel(log);
-
             await _repo.InsertAsync(log);
         }
 

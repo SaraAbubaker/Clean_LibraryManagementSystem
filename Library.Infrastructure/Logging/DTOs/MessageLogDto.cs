@@ -1,7 +1,6 @@
 ﻿
 using Library.Infrastructure.Logging.Models;
 using System.ComponentModel.DataAnnotations;
-using LogLevel = Library.Infrastructure.Logging.Models.LogLevel;
 
 namespace Library.Infrastructure.Logging.DTOs
 {
@@ -21,7 +20,7 @@ namespace Library.Infrastructure.Logging.DTOs
         public required string ServiceName { get; set; }
 
         [Required]
-        public required LogLevel Level { get; set; }
+        public required MyLogLevel Level { get; set; }
 
         [Required]
         public required DateTime CreatedAt { get; set; }

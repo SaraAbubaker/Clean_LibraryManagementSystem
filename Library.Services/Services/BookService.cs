@@ -1,12 +1,13 @@
-﻿using Library.Domain.Repositories;
-using Library.Entities.Models;
-using Library.Services.Interfaces;
-using Library.Shared.DTOs;
-using Library.Shared.DTOs.Book;
-using Library.Shared.Helpers;
-using Mapster;
-using Microsoft.EntityFrameworkCore;
+﻿
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+using Library.Services.Interfaces;
+using Library.Domain.Repositories;
+using Library.Shared.DTOs.Book;
+using Library.Entities.Models;
+using Library.Shared.Helpers;
+using Library.Shared.DTOs;
+using Mapster;
 
 namespace Library.Services.Services
 {
@@ -166,7 +167,7 @@ namespace Library.Services.Services
         }
 
         //Search method (filter, sort, pagination)
-        public async Task<PagedResult<BookListDto>> SearchBooksQuery(SearchBookParamsDto dto, SearchParamsDto searchDto)
+        public async Task<PagedResultDto<BookListDto>> SearchBooksQuery(SearchBookParamsDto dto, SearchParamsDto searchDto)
         {
             Validate.ValidateModel(dto);
             Validate.ValidateModel(searchDto);
@@ -272,7 +273,7 @@ namespace Library.Services.Services
                 })
                 .ToListAsync();
 
-            return new PagedResult<BookListDto>
+            return new PagedResultDto<BookListDto>
             {
                 Items = pagedItems,
                 TotalCount = totalCount,

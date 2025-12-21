@@ -1,10 +1,8 @@
-﻿using Library.Infrastructure.Logging.Interfaces;
+﻿
+using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Mongo;
 using Library.Shared.Helpers;
-using System.ComponentModel.DataAnnotations;
-using LogLevel = Library.Infrastructure.Logging.Models.LogLevel;
-
 
 namespace Library.Infrastructure.Logging.Services
 {
@@ -20,9 +18,14 @@ namespace Library.Infrastructure.Logging.Services
         public async Task LogMessageAsync(
             string request,
             string? response = null,
-            LogLevel level = LogLevel.Info,
+            MyLogLevel level = MyLogLevel.Info,
             string? serviceName = null)
         {
+            if (level != MyLogLevel.Info && level != MyLogLevel.Request)
+            {
+                return;
+            }
+
             var log = new MessageLog
             {
                 Guid = Guid.NewGuid(),

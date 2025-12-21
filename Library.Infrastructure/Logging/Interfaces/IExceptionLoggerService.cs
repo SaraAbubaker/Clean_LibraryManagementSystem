@@ -5,7 +5,7 @@ namespace Library.Infrastructure.Logging.Interfaces
 {
     public interface IExceptionLoggerService
     {
-        Task LogExceptionAsync(Exception ex, string serviceName);
+        Task LogExceptionAsync(Exception ex, string serviceName, MyLogLevel level = MyLogLevel.Exception);
         Task<ExceptionLog?> GetExceptionLogAsync(Guid guid);
         Task<List<ExceptionLog>> GetAllExceptionLogsAsync();
     }

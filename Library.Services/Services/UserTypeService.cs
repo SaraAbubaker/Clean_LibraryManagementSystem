@@ -1,11 +1,11 @@
-﻿using Library.Domain.Repositories;
-using Library.Entities.Models;
-using Library.Services.Interfaces;
+﻿
+using Microsoft.EntityFrameworkCore;
 using Library.Shared.DTOs.UserType;
+using Library.Services.Interfaces;
+using Library.Domain.Repositories;
+using Library.Entities.Models;
 using Library.Shared.Helpers;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace Library.Services.Services
 {

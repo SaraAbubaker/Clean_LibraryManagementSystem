@@ -1,15 +1,12 @@
 ﻿
-using Library.Infrastructure.Logging.Interfaces;
-using System.ComponentModel.DataAnnotations;
-using Library.Infrastructure.Logging.Models;
-using Microsoft.EntityFrameworkCore;
-using Library.Services.Interfaces;
 using Library.Domain.Repositories;
+using Library.Entities.Models;
+using Library.Services.Interfaces;
 using Library.Shared.DTOs.Author;
 using Library.Shared.Exceptions;
-using Library.Entities.Models;
 using Library.Shared.Helpers;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace Library.Services.Services
 {
@@ -17,96 +14,52 @@ namespace Library.Services.Services
     {
         private readonly IGenericRepository<Author> _authorRepo;
         private readonly IGenericRepository<Book> _bookRepo;
-        private readonly IMessageLoggerService _messageLogger;
-        private readonly IExceptionLoggerService _exceptionLogger;
 
         public AuthorService(
-            IGenericRepository<Author> authorRepo, IGenericRepository<Book> bookRepo,
-            IMessageLoggerService messageLogger, IExceptionLoggerService exceptionLogger)
+            IGenericRepository<Author> authorRepo, IGenericRepository<Book> bookRepo)
         {
             _authorRepo = authorRepo;
             _bookRepo = bookRepo;
-            _messageLogger = messageLogger;
-            _exceptionLogger = exceptionLogger;
         }
 
         //CRUD
         public async Task<AuthorListDto> CreateAuthorAsync(CreateAuthorDto dto, int userId)
         {
-            //Log request
-            await _messageLogger.LogMessageAsync($"User {userId} is creating author '{dto.Name}'");
 
-            try
+            Validate.ValidateModel(dto);
+            Validate.Positive(userId, nameof(userId));
+
+            var name = dto.Name.Trim();
+            var email = dto.Email?.Trim();
+
+            var nameLower = name.ToLowerInvariant();
+            var authorExists = await _authorRepo.GetAll()
+                .FirstOrDefaultAsync(a => a.Name.ToLower() == nameLower);
+
+            if (authorExists != null)
+                throw new ConflictException($"An author with the name '{name}' already exists.");
+
+            var author = new Author
             {
-                try
-                {
-                    Validate.ValidateModel(dto);
-                    Validate.Positive(userId, nameof(userId));
-                }
-                catch (Exception ex)
-                {
-                    // Log validation failure as a warning
-                    await LogWarningAsync($"Validation failed for creating author '{dto.Name}'", ex.Message);
-                    throw; // Rethrow to propagate the error
-                }
+                Name = dto.Name,
+                Email = dto.Email,
+                IsArchived = false,
+            };
 
-                var name = dto.Name.Trim();
-                var email = dto.Email?.Trim();
+            await _authorRepo.AddAsync(author, userId);
+            await _authorRepo.CommitAsync();
 
-                var nameLower = name.ToLowerInvariant();
-                var authorExists = await _authorRepo.GetAll()
-                    .FirstOrDefaultAsync(a => a.Name.ToLower() == nameLower);
+            var result = author.Adapt<AuthorListDto>();
 
-                if (authorExists != null)
-                    throw new ConflictException($"An author with the name '{name}' already exists.");
-
-                var author = new Author
-                {
-                    Name = dto.Name,
-                    Email = dto.Email,
-                    IsArchived = false,
-                };
-
-                await _authorRepo.AddAsync(author, userId);
-                await _authorRepo.CommitAsync();
-
-                var result = author.Adapt<AuthorListDto>();
-
-                result.BookCount = await _bookRepo.GetAll().CountAsync(b => b.AuthorId == author.Id);
+            result.BookCount = await _bookRepo.GetAll().CountAsync(b => b.AuthorId == author.Id);
 
 
-                //Log response
-                await _messageLogger.LogMessageAsync(new MessageLog
-                {
-                    Guid = Guid.NewGuid(),
-                    CreatedAt = DateTime.Now,
-                    Request = $"User {userId} is creating author '{dto.Name}'",
-                    Response = $"Author '{dto.Name}' created successfully",
-                    ServiceName = nameof(AuthorService),
-                    Level = LogLevel.Info
-                });
+            return result;
 
-                return result;
-            }
-            catch (Exception ex)
-            {
-                //Log any exception (including validation if not already caught)
-                await _exceptionLogger.LogExceptionAsync(ex, nameof(AuthorService));
-                throw;
-            }
         }
 
         public IQueryable<AuthorListDto> ListAuthorsQuery()
         {
-            //Log request
-            _ = _messageLogger.LogMessageAsync(new MessageLog
-            {
-                Guid = Guid.NewGuid(),
-                CreatedAt = DateTime.Now,
-                Request = $"ListAuthorsQuery was called",
-                ServiceName = nameof(AuthorService),
-                Level = LogLevel.Request
-            });
 
             return _authorRepo.GetAll()
                 .Include(a => a.Books)
@@ -122,33 +75,8 @@ namespace Library.Services.Services
 
         public IQueryable<AuthorListDto> GetAuthorByIdQuery(int id)
         {
-            //Log request
-            _ = _messageLogger.LogMessageAsync(new MessageLog
-            {
-                Guid = Guid.NewGuid(),
-                CreatedAt = DateTime.Now,
-                Request = $"GetAuthorByIdQuery called for id={id}",
-                ServiceName = nameof(AuthorService),
-                Level = LogLevel.Request
-            });
+            Validate.Positive(id, nameof(id));
 
-            try
-            {
-                Validate.Positive(id, nameof(id));
-            }
-            catch (Exception ex)
-            {
-                _ = _messageLogger.LogMessageAsync(new MessageLog
-                {
-                    Guid = Guid.NewGuid(),
-                    CreatedAt = DateTime.Now,
-                    Request = $"Validation failed for GetAuthorByIdQuery with id={id}",
-                    Response = ex.Message,
-                    ServiceName = nameof(AuthorService),
-                    Level = LogLevel.Warning
-                });
-                throw;
-            }
 
             return _authorRepo.GetAll()
                 .Include(a => a.Books)

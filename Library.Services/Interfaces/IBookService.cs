@@ -12,6 +12,6 @@ namespace Library.Services.Interfaces
         IQueryable<BookListDto> GetBooksByCategoryQuery(int categoryId);
         Task<bool> UpdateBookAsync(UpdateBookDto dto, int currentUserId);
         Task<bool> ArchiveBookAsync(int bookId, int performedByUserId);
-        Task<PagedResult<BookListDto>> SearchBooksQuery(SearchBookParamsDto dto, SearchParamsDto searchDto);
+        Task<PagedResultDto<BookListDto>> SearchBooksQuery(SearchBookParamsDto dto, SearchParamsDto searchDto);
     }
 }

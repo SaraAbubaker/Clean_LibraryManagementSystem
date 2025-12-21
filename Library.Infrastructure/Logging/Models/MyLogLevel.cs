@@ -1,7 +1,7 @@
 ﻿
 namespace Library.Infrastructure.Logging.Models
 {
-    public enum LogLevel
+    public enum MyLogLevel
     {
         Info,       // General informational messages,           ex: "Scheduled job completed"
         Request,    // Logs for incoming requests or actions,    ex: "User requested book X"

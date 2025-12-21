@@ -1,17 +1,24 @@
 
 using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Services;
+using MongoDB.Bson.Serialization.Serializers;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Library.Infrastructure.Mongo;
 using Library.Domain.Repositories;
 using Library.Services.Interfaces;
 using Library.Services.Services;
+using MongoDB.Bson.Serialization;
 using Library.Domain.Data;
 using Microsoft.OpenApi;
-
+using MongoDB.Bson;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//MongoDB Guid serialization
+BsonSerializer.RegisterSerializer(
+    new GuidSerializer(GuidRepresentation.Standard)
+);
 
 //Add Dbcontext
 builder.Services.AddDbContext<LibraryContext>(options =>
@@ -61,6 +68,9 @@ builder.Services.AddSingleton<IExceptionLoggerService, ExceptionLoggerService>()
 builder.Services.AddSingleton<IMessageLoggerService, MessageLoggerService>();
 
 var app = builder.Build();
+
+//Middleware
+app.UseMiddleware<Library.API.Middleware.LoggingMiddleware>();
 
 //Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

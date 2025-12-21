@@ -8,18 +8,13 @@ namespace Library.Domain.Data
     {
         public LibraryContext CreateDbContext(string[] args)
         {
-            //Find appsettings.json using startup project
-            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../LibraryManagementSystemAPIs");
-
+            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../Library.API");
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(basePath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.json", optional: false)
                 .Build();
 
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrEmpty(connectionString))
-                throw new InvalidOperationException("Could not find a connection string named 'DefaultConnection'.");
-
             var optionsBuilder = new DbContextOptionsBuilder<LibraryContext>();
             optionsBuilder.UseSqlServer(connectionString);
 
