@@ -1,17 +1,20 @@
 
-using Library.Infrastructure.Logging.Interfaces;
-using Library.Infrastructure.Logging.Services;
-using MongoDB.Bson.Serialization.Serializers;
-using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore;
-using Library.Infrastructure.Mongo;
+using Library.Domain.Data;
 using Library.Domain.Repositories;
+using Library.Infrastructure.Logging.DTOs;
+using Library.Infrastructure.Logging.Interfaces;
+using Library.Infrastructure.Logging.Models;
+using Library.Infrastructure.Logging.Services;
+using Library.Infrastructure.Mongo;
 using Library.Services.Interfaces;
 using Library.Services.Services;
-using MongoDB.Bson.Serialization;
-using Library.Domain.Data;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,10 +72,38 @@ builder.Services.AddSingleton<IMessageLoggerService, MessageLoggerService>();
 
 var app = builder.Build();
 
-//Middleware
-app.UseMiddleware<Library.API.Middleware.LoggingMiddleware>();
+// Exception handler must come first
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
 
-//Configure the HTTP request pipeline
+        if (exception != null)
+        {
+            var logger = context.RequestServices.GetRequiredService<IExceptionLoggerService>();
+
+            var exceptionDto = new ExceptionLogDto
+            {
+                Guid = Guid.NewGuid(),
+                CreatedAt = DateTime.Now,
+                Level = MyLogLevel.Exception,
+                ServiceName = $"{context.Request.Method} {context.Request.Path}",
+                Request = $"{context.Request.Method} {context.Request.Path}",
+                ExceptionMessage = exception.Message,
+                StackTrace = exception.StackTrace ?? string.Empty
+            };
+
+            await logger.LogExceptionAsync(exceptionDto);
+        }
+
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync("An error occurred.");
+    });
+});
+
+
+//Configure swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -82,6 +113,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
+// Logging middleware after exception handler
+app.UseMiddleware<Library.API.Middleware.LoggingMiddleware>();
 app.MapControllers();
 
 var mongoContext = app.Services.GetRequiredService<MongoContext>();

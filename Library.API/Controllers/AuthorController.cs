@@ -18,6 +18,14 @@ namespace Library.API.Controllers
             _service = service;
         }
 
+
+        [HttpGet("exception-test")]
+        public IActionResult ThrowException()
+        {
+            throw new InvalidOperationException("This is a test exception");
+        }
+
+
         [HttpPost]
         [ProducesResponseType(typeof(AuthorListDto), 201)]
         [ProducesResponseType(400)]

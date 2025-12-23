@@ -33,10 +33,10 @@ namespace Library.Services.Services
 
             var users = _userRepo.GetAll();
 
-            if (users.Any(u => string.Equals(u.Username, usernameNormalized, StringComparison.OrdinalIgnoreCase)))
+            if (users.Any(u => u.Username.ToLower() == usernameNormalized.ToLower()))
                 throw new InvalidOperationException("Username already taken.");
 
-            if (users.Any(u => string.Equals(u.Email, emailInput, StringComparison.OrdinalIgnoreCase)))
+            if (users.Any(u => u.Email.ToLower() == emailInput.ToLower()))
                 throw new InvalidOperationException("Email already registered.");
 
             //Normal user

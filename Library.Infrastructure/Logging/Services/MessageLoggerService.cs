@@ -1,4 +1,4 @@
-﻿
+﻿using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Mongo;
@@ -15,25 +15,16 @@ namespace Library.Infrastructure.Logging.Services
             _repo = new MongoRepository<MessageLog>(context, "MessageLogs");
         }
 
-        public async Task LogMessageAsync(
-            string request,
-            string? response = null,
-            MyLogLevel level = MyLogLevel.Info,
-            string? serviceName = null)
+        public async Task LogInfoAsync(MessageLogDTO dto)
         {
-            if (level != MyLogLevel.Info && level != MyLogLevel.Request)
-            {
-                return;
-            }
-
             var log = new MessageLog
             {
-                Guid = Guid.NewGuid(),
-                CreatedAt = DateTime.Now,
-                Request = request,
-                Response = response,
-                Level = level,
-                ServiceName = serviceName ?? "UnknownService"
+                Guid = dto.Guid,
+                CreatedAt = dto.CreatedAt,
+                Request = dto.Request,
+                Response = dto.Response,
+                Level = dto.Level,
+                ServiceName = dto.ServiceName
             };
 
             Validate.ValidateModel(log);

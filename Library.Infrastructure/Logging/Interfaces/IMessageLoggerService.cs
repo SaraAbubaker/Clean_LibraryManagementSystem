@@ -1,15 +1,11 @@
-﻿
+﻿using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Models;
 
 namespace Library.Infrastructure.Logging.Interfaces
 {
     public interface IMessageLoggerService
     {
-        Task LogMessageAsync(
-            string request,
-            string? response = null,
-            MyLogLevel level = MyLogLevel.Info,
-            string? serviceName = null);
+        Task LogInfoAsync(MessageLogDTO dto);
         Task<MessageLog?> GetMessageLogAsync(Guid guid);
         Task<List<MessageLog>> GetAllMessageLogsAsync();
     }

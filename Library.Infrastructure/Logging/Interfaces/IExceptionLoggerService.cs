@@ -1,11 +1,12 @@
-﻿
+﻿using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Models;
 
 namespace Library.Infrastructure.Logging.Interfaces
 {
     public interface IExceptionLoggerService
     {
-        Task LogExceptionAsync(Exception ex, string serviceName, MyLogLevel level = MyLogLevel.Exception);
+        Task LogWarningAsync(WarningLogDto dto);
+        Task LogExceptionAsync(ExceptionLogDto dto);
         Task<ExceptionLog?> GetExceptionLogAsync(Guid guid);
         Task<List<ExceptionLog>> GetAllExceptionLogsAsync();
     }

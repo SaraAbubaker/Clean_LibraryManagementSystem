@@ -1,11 +1,12 @@
 ﻿
+using System.Globalization;
+
 namespace Library.Infrastructure.Logging.Models
 {
-    public enum MyLogLevel
+    public static class MyLogLevel
     {
-        Info,       // General informational messages,           ex: "Scheduled job completed"
-        Request,    // Logs for incoming requests or actions,    ex: "User requested book X"
-        Warning,    // Unexpected situations that aren’t errors, ex: "Borrow limit exceeded"
-        Exception   // Actual errors or exceptions,              ex: "Null reference exception"
+        public const string Info = "Info";            // General informational messages,           ex: "Scheduled job completed"
+        public const string Warning = "Warning";      // Unexpected situations that aren’t errors, ex: "Borrow limit exceeded"
+        public const string Exception = "Exception";  // Actual errors or exceptions,              ex: "Null reference exception"
     }
 }

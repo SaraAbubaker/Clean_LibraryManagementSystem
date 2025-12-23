@@ -9,6 +9,10 @@ namespace Library.Infrastructure.Logging.DTOs
         [Required]
         public Guid Guid { get; set; }
 
+        [Required(ErrorMessage = "Request message is required.")]
+        [StringLength(1000, ErrorMessage = "Request message cannot exceed 1000 characters.")]
+        public required string Request { get; set; }
+
         [Required(ErrorMessage = "Exception message is required.")]
         [StringLength(1000, ErrorMessage = "Exception message cannot exceed 1000 characters.")]
         public required string ExceptionMessage { get; set; }
@@ -22,7 +26,7 @@ namespace Library.Infrastructure.Logging.DTOs
         public required string ServiceName { get; set; }
 
         [Required]
-        public MyLogLevel Level { get; set; } = MyLogLevel.Exception; //default
+        public required string Level { get; set; }
 
         [Required]
         public required DateTime CreatedAt { get; set; }
