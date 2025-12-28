@@ -17,4 +17,10 @@
 		<PackageReference Include="RabbitMQ.Client" Version="7.2.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="RabbitMQ\Consuming\" />
+	  <Folder Include="RabbitMQ\Services\" />
+	  <Folder Include="RabbitMQ\Publishing\" />
+	</ItemGroup>
+
 </Project>

@@ -1,11 +1,13 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿
+using Library.Infrastructure.RabbitMQ.Configuation;
 using Library.Infrastructure.Logging.Interfaces;
+using Library.Infrastructure.Logging.DTOs;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;
-using System.Text.Json;
 
-namespace Library.Infrastructure.RabbitMQ
+namespace Library.Infrastructure.RabbitMQ.Services
 {
     public class RabbitMqLoggerService : IMessageLoggerService, IExceptionLoggerService
     {

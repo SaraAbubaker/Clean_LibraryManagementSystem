@@ -1,7 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace Library.Infrastructure.RabbitMQ
+namespace Library.Infrastructure.RabbitMQ.Configuation
 {
     public class RabbitMqSettings
     {

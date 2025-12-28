@@ -1,13 +1,14 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿
+using Library.Infrastructure.RabbitMQ.Configuation;
 using Library.Infrastructure.Logging.Interfaces;
-using Library.Infrastructure.Logging.Models;
+using Library.Infrastructure.Logging.DTOs;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Text;
 using System.Text.Json;
+using RabbitMQ.Client;
+using System.Text;
 
-namespace Library.Infrastructure.RabbitMQ
+namespace Library.Infrastructure.RabbitMQ.Consuming
 {
     public class LogConsumer : IDisposable
     {

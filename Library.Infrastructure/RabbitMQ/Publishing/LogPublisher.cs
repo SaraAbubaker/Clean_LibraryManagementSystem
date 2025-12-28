@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Library.Infrastructure.RabbitMQ.Configuation;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using System.Text;
 
-namespace Library.Infrastructure.RabbitMQ
+namespace Library.Infrastructure.RabbitMQ.Publishing
 {
     public class LogPublisher
     {

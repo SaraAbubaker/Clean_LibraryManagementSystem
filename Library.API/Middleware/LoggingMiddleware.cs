@@ -1,6 +1,6 @@
 ﻿using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Models;
-using Library.Infrastructure.RabbitMQ;
+using Library.Infrastructure.RabbitMQ.Publishing;
 using Library.Shared.Helpers;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;

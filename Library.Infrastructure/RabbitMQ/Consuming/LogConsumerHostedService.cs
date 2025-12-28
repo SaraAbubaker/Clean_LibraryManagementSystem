@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 
-namespace Library.Infrastructure.RabbitMQ
+namespace Library.Infrastructure.RabbitMQ.Consuming
 {
     public class LogConsumerHostedService : BackgroundService
     {
