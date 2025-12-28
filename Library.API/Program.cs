@@ -6,6 +6,7 @@ using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Logging.Services;
 using Library.Infrastructure.Mongo;
+using Library.Infrastructure.RabbitMQ;
 using Library.Services.Interfaces;
 using Library.Services.Services;
 using Microsoft.AspNetCore.Diagnostics;
@@ -14,6 +15,7 @@ using Microsoft.OpenApi;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using RabbitMQ.Client;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -44,6 +46,7 @@ builder.Services.AddSwaggerGen(c =>
     c.UseInlineDefinitionsForEnums();
 });
 
+//Library Services
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IBookService, BookService>();
@@ -69,6 +72,39 @@ builder.Services.AddSingleton(sp =>
 // Logging services
 builder.Services.AddSingleton<IExceptionLoggerService, ExceptionLoggerService>();
 builder.Services.AddSingleton<IMessageLoggerService, MessageLoggerService>();
+builder.Services.AddSingleton<IFailedLoggerService, FailedLoggerService>();
+
+
+// RabbitMQ settings binding + validation
+builder.Services.AddOptions<RabbitMqSettings>()
+    .Bind(builder.Configuration.GetSection("RabbitMqSettings"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+// Register RabbitMQ IConnection singleton
+builder.Services.AddSingleton<IConnection>(sp =>
+{
+    var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMqSettings>>().Value;
+
+    var factory = new ConnectionFactory
+    {
+        HostName = settings.HostName ?? throw new InvalidOperationException("RabbitMq HostName is missing"),
+        UserName = settings.UserName ?? throw new InvalidOperationException("RabbitMq UserName is missing"),
+        Password = settings.Password ?? throw new InvalidOperationException("RabbitMq Password is missing"),
+        Port = settings.Port
+    };
+
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
+
+// Publisher/consumer/logger services
+builder.Services.AddSingleton<LogPublisher>();
+builder.Services.AddSingleton<LogConsumer>();
+builder.Services.AddSingleton<RabbitMqLoggerService>();
+
+// Hosted service to start consumers automatically
+builder.Services.AddHostedService<LogConsumerHostedService>();
+
 
 var app = builder.Build();
 

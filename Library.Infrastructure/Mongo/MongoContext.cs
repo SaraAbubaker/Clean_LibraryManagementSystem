@@ -23,6 +23,9 @@ namespace Library.Infrastructure.Mongo
 
             if (!existingCollections.Contains("MessageLogs"))
                 Database.CreateCollection("MessageLogs");
+
+            if (!existingCollections.Contains("FailedLogs"))
+                Database.CreateCollection("FailedLogs");
         }
     }
 }

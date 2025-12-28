@@ -48,15 +48,5 @@ namespace Library.Infrastructure.Logging.Services
             Validate.ValidateModel(log);
             await _repo.InsertAsync(log);
         }
-
-        public async Task<ExceptionLog?> GetExceptionLogAsync(Guid guid)
-        {
-            return await _repo.FindOneAsync(x => x.Guid == guid);
-        }
-
-        public async Task<List<ExceptionLog>> GetAllExceptionLogsAsync()
-        {
-            return await _repo.FindAsync(_ => true);
-        }
     }
 }

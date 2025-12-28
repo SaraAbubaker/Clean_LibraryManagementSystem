@@ -1,47 +1,40 @@
 ﻿using Library.Infrastructure.Logging.DTOs;
-using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
+using Library.Infrastructure.RabbitMQ;
+using Library.Shared.Helpers;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
+using System.Text.Json;
 
 namespace Library.API.Middleware
 {
     public class LoggingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IMessageLoggerService _messageLogger;
-        private readonly IExceptionLoggerService _exceptionLogger;
+        private readonly LogPublisher _publisher;
 
-        public LoggingMiddleware(
-            RequestDelegate next,
-            IMessageLoggerService messageLogger,
-            IExceptionLoggerService exceptionLogger)
+        public LoggingMiddleware(RequestDelegate next, LogPublisher publisher)
         {
             _next = next;
-            _messageLogger = messageLogger;
-            _exceptionLogger = exceptionLogger;
+            _publisher = publisher;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            //Capture Request
+            // Capture Request
             context.Request.EnableBuffering();
-
             string requestBody = string.Empty;
+
             if (context.Request.ContentLength > 0)
             {
-                using var reader = new StreamReader(
-                    context.Request.Body,
-                    Encoding.UTF8,
-                    leaveOpen: true);
-
+                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
                 requestBody = await reader.ReadToEndAsync();
                 context.Request.Body.Position = 0;
             }
 
             var requestSummary = $"{context.Request.Method} {context.Request.Path}";
 
-            //Capture Response
+            // Capture Response
             var originalBody = context.Response.Body;
             using var responseBody = new MemoryStream();
             context.Response.Body = responseBody;
@@ -56,11 +49,11 @@ namespace Library.API.Middleware
                 var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>();
                 string serviceName = actionDescriptor?.ActionName ?? requestSummary;
 
-                //Exception
+                // Exception → publish to ExceptionQueue
                 var exceptionDto = new ExceptionLogDto
                 {
                     Guid = Guid.NewGuid(),
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     Level = MyLogLevel.Exception,
                     ServiceName = serviceName,
                     Request = requestSummary + " " + requestBody,
@@ -68,7 +61,10 @@ namespace Library.API.Middleware
                     StackTrace = (ex.StackTrace ?? string.Empty).TrimStart()
                 };
 
-                await _exceptionLogger.LogExceptionAsync(exceptionDto);
+                Validate.ValidateModel(exceptionDto);
+                var json = JsonSerializer.Serialize(exceptionDto);
+                await _publisher.PublishExceptionAsync(json);
+
                 throw; // rethrow so pipeline continues correctly
             }
             finally
@@ -83,42 +79,18 @@ namespace Library.API.Middleware
                 var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>();
                 string serviceName = actionDescriptor?.ActionName ?? requestSummary;
 
-                //Decide where to log
+                // Decide where to log
                 if (!string.IsNullOrWhiteSpace(responseText) && responseText.Contains("\"success\""))
                 {
                     if (responseText.Contains("\"success\":false"))
                     {
-                        // Extract message manually
-                        string warningMessage = "Unknown API error";
-                        int msgIndex = responseText.IndexOf("\"message\":");
-                        if (msgIndex >= 0)
-                        {
-                            int start = responseText.IndexOf('"', msgIndex + 10) + 1;
-                            int end = responseText.IndexOf('"', start);
-                            if (start > 0 && end > start)
-                            {
-                                warningMessage = responseText.Substring(start, end - start);
-                            }
-                        }
-
-                        //WarningLogDto
-                        var warningDto = new WarningLogDto
-                        {
-                            Guid = Guid.NewGuid(),
-                            CreatedAt = DateTime.Now,
-                            Level = MyLogLevel.Warning,
-                            ServiceName = serviceName,
-                            Request = requestSummary + " " + requestBody,
-                            WarningMessage = warningMessage,
-                            Response = responseText
-                        };
-
-                        await _exceptionLogger.LogWarningAsync(warningDto);
+                        await PublishWarningAsync(serviceName, requestSummary, requestBody, responseText,
+                            ExtractMessage(responseText));
                     }
                     else if (responseText.Contains("\"success\":true"))
                     {
-                        //MessageLogDto
-                        var messageDto = new MessageLogDTO
+                        // Info → publish to MessageQueue
+                        var messageDto = new MessageLogDto
                         {
                             Guid = Guid.NewGuid(),
                             CreatedAt = DateTime.Now,
@@ -128,38 +100,44 @@ namespace Library.API.Middleware
                             Response = responseSummary
                         };
 
-                        await _messageLogger.LogInfoAsync(messageDto);
+                        Validate.ValidateModel(messageDto);
+                        var json = JsonSerializer.Serialize(messageDto);
+                        await _publisher.PublishMessageAsync(json);
                     }
                     else
                     {
-                        //No clear success flag → Info
-                        var messageDto = new MessageLogDTO
-                        {
-                            Guid = Guid.NewGuid(),
-                            CreatedAt = DateTime.Now,
-                            Level = MyLogLevel.Info,
-                            ServiceName = serviceName,
-                            Request = requestSummary + " " + requestBody,
-                            Response = responseSummary
-                        };
-
-                        await _messageLogger.LogInfoAsync(messageDto);
+                        await PublishWarningAsync(serviceName, requestSummary, requestBody, responseSummary,
+                            "Response did not contain a clear success flag.");
                     }
                 }
                 else
                 {
-                    //Non-JSON responses → Info
-                    var messageDto = new MessageLogDTO
+                    // Non-JSON responses → Failed
+                    try
                     {
-                        Guid = Guid.NewGuid(),
-                        CreatedAt = DateTime.Now,
-                        Level = MyLogLevel.Info,
-                        ServiceName = serviceName,
-                        Request = requestSummary + " " + requestBody,
-                        Response = responseSummary
-                    };
+                        JsonDocument.Parse(responseText); // will throw if invalid JSON
 
-                    await _messageLogger.LogInfoAsync(messageDto);
+                        // If parsing succeeds but no "success" flag → Warning
+                        await PublishWarningAsync(serviceName, requestSummary, requestBody, responseSummary,
+                            "Response did not contain a clear success flag.");
+                    }
+                    catch (Exception ex)
+                    {
+                        var failedDto = new FailedLogDto
+                        {
+                            Guid = Guid.NewGuid(),
+                            CreatedAt = DateTime.Now,
+                            Level = MyLogLevel.Failed.ToString(),
+                            ServiceName = serviceName,
+                            OriginalMessage = requestSummary + " " + requestBody,
+                            FailedMessage = "Response was not valid JSON.",
+                            StackTrace = (ex.StackTrace ?? string.Empty).TrimStart()
+                        };
+
+                        Validate.ValidateModel(failedDto);
+                        var json = JsonSerializer.Serialize(failedDto);
+                        await _publisher.PublishFailedAsync(json);
+                    }
                 }
 
                 // Restore response body
@@ -168,5 +146,43 @@ namespace Library.API.Middleware
             }
         }
 
+        private async Task PublishWarningAsync(
+            string serviceName,
+            string requestSummary,
+            string requestBody,
+            string responseText,
+            string warningMessage)
+        {
+            var warningDto = new WarningLogDto
+            {
+                Guid = Guid.NewGuid(),
+                CreatedAt = DateTime.Now,
+                Level = MyLogLevel.Warning,
+                ServiceName = serviceName,
+                Request = requestSummary + " " + requestBody,
+                WarningMessage = warningMessage,
+                Response = responseText
+            };
+
+            Validate.ValidateModel(warningDto);
+            var json = JsonSerializer.Serialize(warningDto);
+            await _publisher.PublishExceptionAsync(json);
+        }
+
+        private static string ExtractMessage(string responseText)
+        {
+            string warningMessage = "Unknown API error";
+            int msgIndex = responseText.IndexOf("\"message\":");
+            if (msgIndex >= 0)
+            {
+                int start = responseText.IndexOf('"', msgIndex + 10) + 1;
+                int end = responseText.IndexOf('"', start);
+                if (start > 0 && end > start)
+                {
+                    warningMessage = responseText.Substring(start, end - start);
+                }
+            }
+            return warningMessage;
+        }
     }
 }

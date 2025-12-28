@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Library.Infrastructure.Logging.DTOs
 {
-    public class MessageLogDTO
+    public class MessageLogDto
     {
         [Required]
         public Guid Guid { get; set; }

@@ -1,31 +1,39 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
 using System.Text;
 
 namespace Library.Infrastructure.RabbitMQ
 {
     public class LogPublisher
     {
-        private readonly RabbitMqConnection _connection;
+        private readonly IConnection _connection;
+        private readonly RabbitMqSettings _settings;
 
-        public LogPublisher(RabbitMqConnection connection)
+        public LogPublisher(IConnection connection, IOptions<RabbitMqSettings> options)
         {
             _connection = connection;
+            _settings = options.Value;
         }
 
         public async Task PublishMessageAsync(string message)
         {
-            await PublishToQueueAsync(message, "message-logs");
+            await PublishToQueueAsync(message, _settings.MessageQueue);
         }
 
         public async Task PublishExceptionAsync(string exceptionMessage)
         {
-            await PublishToQueueAsync(exceptionMessage, "exception-logs");
+            await PublishToQueueAsync(exceptionMessage, _settings.ExceptionQueue);
         }
+
+        public async Task PublishFailedAsync(string failedMessage)
+        {
+            await PublishToQueueAsync(failedMessage, _settings.FailedQueue);
+        }
+
 
         private async Task PublishToQueueAsync(string message, string queueName)
         {
-            await using var connection = await _connection.GetConnectionAsync();
-            await using var channel = await connection.CreateChannelAsync();
+            await using var channel = await _connection.CreateChannelAsync();
 
             // Ensure the queue exists
             await channel.QueueDeclareAsync(
@@ -39,7 +47,7 @@ namespace Library.Infrastructure.RabbitMQ
 
             var props = new BasicProperties
             {
-                ContentType = "text/plain",
+                ContentType = "application/json",
                 DeliveryMode = DeliveryModes.Persistent
             };
 

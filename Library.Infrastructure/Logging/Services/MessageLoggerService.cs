@@ -15,7 +15,7 @@ namespace Library.Infrastructure.Logging.Services
             _repo = new MongoRepository<MessageLog>(context, "MessageLogs");
         }
 
-        public async Task LogInfoAsync(MessageLogDTO dto)
+        public async Task LogInfoAsync(MessageLogDto dto)
         {
             var log = new MessageLog
             {
@@ -29,16 +29,6 @@ namespace Library.Infrastructure.Logging.Services
 
             Validate.ValidateModel(log);
             await _repo.InsertAsync(log);
-        }
-
-        public async Task<MessageLog?> GetMessageLogAsync(Guid guid)
-        {
-            return await _repo.FindOneAsync(x => x.Guid == guid);
-        }
-
-        public async Task<List<MessageLog>> GetAllMessageLogsAsync()
-        {
-            return await _repo.FindAsync(_ => true);
         }
     }
 }
