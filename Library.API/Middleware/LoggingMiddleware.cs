@@ -1,26 +1,27 @@
 ﻿using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Models;
-using Library.Infrastructure.RabbitMQ.Publishing;
 using Library.Shared.Helpers;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
 using System.Text.Json;
+using MassTransit;
 
 namespace Library.API.Middleware
 {
     public class LoggingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly LogPublisher _publisher;
 
-        public LoggingMiddleware(RequestDelegate next, LogPublisher publisher)
+        public LoggingMiddleware(RequestDelegate next)
         {
             _next = next;
-            _publisher = publisher;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
+            // Resolve IPublishEndpoint per request scope
+            var publishEndpoint = context.RequestServices.GetRequiredService<IPublishEndpoint>();
+
             // Capture Request
             context.Request.EnableBuffering();
             string requestBody = string.Empty;
@@ -62,8 +63,7 @@ namespace Library.API.Middleware
                 };
 
                 Validate.ValidateModel(exceptionDto);
-                var json = JsonSerializer.Serialize(exceptionDto);
-                await _publisher.PublishExceptionAsync(json);
+                await publishEndpoint.Publish(exceptionDto);
 
                 throw; // rethrow so pipeline continues correctly
             }
@@ -84,7 +84,7 @@ namespace Library.API.Middleware
                 {
                     if (responseText.Contains("\"success\":false"))
                     {
-                        await PublishWarningAsync(serviceName, requestSummary, requestBody, responseText,
+                        await PublishWarningAsync(publishEndpoint, serviceName, requestSummary, requestBody, responseText,
                             ExtractMessage(responseText));
                     }
                     else if (responseText.Contains("\"success\":true"))
@@ -101,12 +101,11 @@ namespace Library.API.Middleware
                         };
 
                         Validate.ValidateModel(messageDto);
-                        var json = JsonSerializer.Serialize(messageDto);
-                        await _publisher.PublishMessageAsync(json);
+                        await publishEndpoint.Publish(messageDto);
                     }
                     else
                     {
-                        await PublishWarningAsync(serviceName, requestSummary, requestBody, responseSummary,
+                        await PublishWarningAsync(publishEndpoint, serviceName, requestSummary, requestBody, responseSummary,
                             "Response did not contain a clear success flag.");
                     }
                 }
@@ -118,7 +117,7 @@ namespace Library.API.Middleware
                         JsonDocument.Parse(responseText); // will throw if invalid JSON
 
                         // If parsing succeeds but no "success" flag → Warning
-                        await PublishWarningAsync(serviceName, requestSummary, requestBody, responseSummary,
+                        await PublishWarningAsync(publishEndpoint, serviceName, requestSummary, requestBody, responseSummary,
                             "Response did not contain a clear success flag.");
                     }
                     catch (Exception ex)
@@ -135,8 +134,7 @@ namespace Library.API.Middleware
                         };
 
                         Validate.ValidateModel(failedDto);
-                        var json = JsonSerializer.Serialize(failedDto);
-                        await _publisher.PublishFailedAsync(json);
+                        await publishEndpoint.Publish(failedDto);
                     }
                 }
 
@@ -147,6 +145,7 @@ namespace Library.API.Middleware
         }
 
         private async Task PublishWarningAsync(
+            IPublishEndpoint publishEndpoint,
             string serviceName,
             string requestSummary,
             string requestBody,
@@ -165,8 +164,7 @@ namespace Library.API.Middleware
             };
 
             Validate.ValidateModel(warningDto);
-            var json = JsonSerializer.Serialize(warningDto);
-            await _publisher.PublishExceptionAsync(json);
+            await publishEndpoint.Publish(warningDto);
         }
 
         private static string ExtractMessage(string responseText)

@@ -1,0 +1,61 @@
+﻿using Library.Infrastructure.Logging.DTOs;
+using Library.Infrastructure.Logging.Interfaces;
+using Library.Infrastructure.Logging.Models;
+using MassTransit;
+
+namespace Library.API.Consuming
+{
+    public class ExceptionLogsConsumer :
+        IConsumer<ExceptionLogDto>,
+        IConsumer<WarningLogDto>
+    {
+        private readonly IExceptionLoggerService _logger;
+        private readonly IFailedLoggerService _failedLogger;
+
+        public ExceptionLogsConsumer(IExceptionLoggerService logger, IFailedLoggerService failedLogger)
+        {
+            _logger = logger;
+            _failedLogger = failedLogger;
+        }
+
+        public async Task Consume(ConsumeContext<ExceptionLogDto> context)
+        {
+            try
+            {
+                await _logger.LogExceptionAsync(context.Message);
+            }
+            catch (Exception ex)
+            {
+                await LogFailedAsync("Exception log failed", context.Message, nameof(ExceptionLogsConsumer), ex);
+            }
+        }
+
+        public async Task Consume(ConsumeContext<WarningLogDto> context)
+        {
+            try
+            {
+                await _logger.LogWarningAsync(context.Message);
+            }
+            catch (Exception ex)
+            {
+                await LogFailedAsync("Warning log failed", context.Message, nameof(ExceptionLogsConsumer), ex);
+            }
+        }
+
+        private async Task LogFailedAsync(string reason, object originalMessage, string consumerName, Exception ex)
+        {
+            var failedDto = new FailedLogDto
+            {
+                Guid = Guid.NewGuid(),
+                CreatedAt = DateTime.Now,
+                Level = MyLogLevel.Failed,
+                ServiceName = consumerName,
+                OriginalMessage = System.Text.Json.JsonSerializer.Serialize(originalMessage),
+                FailedMessage = reason,
+                StackTrace = ex.StackTrace ?? string.Empty
+            };
+
+            await _failedLogger.LogFailedAsync(failedDto);
+        }
+    }
+}

@@ -1,4 +1,5 @@
 
+using Library.API.Consuming;
 using Library.Domain.Data;
 using Library.Domain.Repositories;
 using Library.Infrastructure.Logging.DTOs;
@@ -6,50 +7,44 @@ using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Logging.Services;
 using Library.Infrastructure.Mongo;
-using Library.Infrastructure.RabbitMQ.Configuation;
-using Library.Infrastructure.RabbitMQ.Consuming;
-using Library.Infrastructure.RabbitMQ.Publishing;
-using Library.Infrastructure.RabbitMQ.Services;
 using Library.Services.Interfaces;
 using Library.Services.Services;
+using MassTransit;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using RabbitMQ.Client;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//MongoDB Guid serialization
+// MongoDB Guid serialization
 BsonSerializer.RegisterSerializer(
     new GuidSerializer(GuidRepresentation.Standard)
 );
 
-//Add Dbcontext
+// Add DbContext
 builder.Services.AddDbContext<LibraryContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//Add services to the container.
+// Add controllers + JSON options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-//Register Swagger services
+// Register Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Library API", Version = "v1" });
-
-    //Swagger use enum names in dropdowns instead of numbers
     c.UseInlineDefinitionsForEnums();
 });
 
-//Library Services
+// Library Services
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IBookService, BookService>();
@@ -77,37 +72,33 @@ builder.Services.AddSingleton<IExceptionLoggerService, ExceptionLoggerService>()
 builder.Services.AddSingleton<IMessageLoggerService, MessageLoggerService>();
 builder.Services.AddSingleton<IFailedLoggerService, FailedLoggerService>();
 
-
-// RabbitMQ settings binding + validation
-builder.Services.AddOptions<RabbitMqSettings>()
-    .Bind(builder.Configuration.GetSection("RabbitMqSettings"))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
-
-// Register RabbitMQ IConnection singleton
-builder.Services.AddSingleton<IConnection>(sp =>
+// MassTransit setup
+builder.Services.AddMassTransit(x =>
 {
-    var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMqSettings>>().Value;
+    x.AddConsumer<ExceptionLogsConsumer>();
+    x.AddConsumer<MessageLogsConsumer>();
 
-    var factory = new ConnectionFactory
+    x.UsingRabbitMq((context, cfg) =>
     {
-        HostName = settings.HostName ?? throw new InvalidOperationException("RabbitMq HostName is missing"),
-        UserName = settings.UserName ?? throw new InvalidOperationException("RabbitMq UserName is missing"),
-        Password = settings.Password ?? throw new InvalidOperationException("RabbitMq Password is missing"),
-        Port = settings.Port
-    };
+        cfg.Host(builder.Configuration["RabbitMqSettings:HostName"], h =>
+        {
+            h.Username(builder.Configuration["RabbitMqSettings:UserName"]
+                ?? throw new InvalidOperationException("RabbitMQ username missing"));
+            h.Password(builder.Configuration["RabbitMqSettings:Password"]
+                ?? throw new InvalidOperationException("RabbitMQ password missing"));
+        });
 
-    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+        cfg.ReceiveEndpoint("exception-log-queue", e =>
+        {
+            e.ConfigureConsumer<ExceptionLogsConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("message-log-queue", e =>
+        {
+            e.ConfigureConsumer<MessageLogsConsumer>(context);
+        });
+    });
 });
-
-// Publisher/consumer/logger services
-builder.Services.AddSingleton<LogPublisher>();
-builder.Services.AddSingleton<LogConsumer>();
-builder.Services.AddSingleton<RabbitMqLoggerService>();
-
-// Hosted service to start consumers automatically
-builder.Services.AddHostedService<LogConsumerHostedService>();
-
 
 var app = builder.Build();
 
@@ -141,8 +132,7 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-
-//Configure swagger
+// Configure swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -158,6 +148,6 @@ app.UseMiddleware<Library.API.Middleware.LoggingMiddleware>();
 app.MapControllers();
 
 var mongoContext = app.Services.GetRequiredService<MongoContext>();
-//mongoContext.CreateCollectionsIfNotExist(); //temporary, one-time creation of collections
+// mongoContext.CreateCollectionsIfNotExist(); // temporary, one-time creation of collections
 
 app.Run();
