@@ -1,12 +1,12 @@
 
 using Library.API.Consuming;
+using Library.Common.RabbitMqMessages.LoggingMessages;
 using Library.Domain.Data;
 using Library.Domain.Repositories;
-using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Interfaces;
-using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Logging.Services;
 using Library.Infrastructure.Mongo;
+using Library.Infrastructure.RabbitMQ.Configuation;
 using Library.Services.Interfaces;
 using Library.Services.Services;
 using MassTransit;
@@ -52,8 +52,6 @@ builder.Services.AddScoped<IBorrowService, BorrowService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IPublisherService, PublisherService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IUserTypeService, UserTypeService>();
 
 // MongoContext
 builder.Services.AddSingleton(sp =>
@@ -73,6 +71,11 @@ builder.Services.AddSingleton<IMessageLoggerService, MessageLoggerService>();
 builder.Services.AddSingleton<IFailedLoggerService, FailedLoggerService>();
 
 // MassTransit setup
+var rabbitMqSettings = builder.Configuration
+    .GetSection("RabbitMqSettings")
+    .Get<RabbitMqSettings>()
+    ?? throw new InvalidOperationException("RabbitMQ settings missing");
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<ExceptionLogsConsumer>();
@@ -80,25 +83,24 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host(builder.Configuration["RabbitMqSettings:HostName"], h =>
+        cfg.Host(rabbitMqSettings.HostName, h =>
         {
-            h.Username(builder.Configuration["RabbitMqSettings:UserName"]
-                ?? throw new InvalidOperationException("RabbitMQ username missing"));
-            h.Password(builder.Configuration["RabbitMqSettings:Password"]
-                ?? throw new InvalidOperationException("RabbitMQ password missing"));
+            h.Username(rabbitMqSettings.UserName);
+            h.Password(rabbitMqSettings.Password);
         });
 
-        cfg.ReceiveEndpoint("exception-log-queue", e =>
+        cfg.ReceiveEndpoint(rabbitMqSettings.ExceptionQueue, e =>
         {
             e.ConfigureConsumer<ExceptionLogsConsumer>(context);
         });
 
-        cfg.ReceiveEndpoint("message-log-queue", e =>
+        cfg.ReceiveEndpoint(rabbitMqSettings.MessageQueue, e =>
         {
             e.ConfigureConsumer<MessageLogsConsumer>(context);
         });
     });
 });
+
 
 var app = builder.Build();
 
@@ -113,7 +115,7 @@ app.UseExceptionHandler(errorApp =>
         {
             var logger = context.RequestServices.GetRequiredService<IExceptionLoggerService>();
 
-            var exceptionDto = new ExceptionLogDto
+            var exceptionDto = new ExceptionLogMessage
             {
                 Guid = Guid.NewGuid(),
                 CreatedAt = DateTime.Now,

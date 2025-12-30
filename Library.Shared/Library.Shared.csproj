@@ -11,4 +11,8 @@
 		<Folder Include="Extensions\" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\Library.Common\Library.Common.csproj" />
+	</ItemGroup>
+
 </Project>

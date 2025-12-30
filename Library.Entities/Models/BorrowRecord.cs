@@ -1,6 +1,6 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
-using Library.Entities.Base;
+using Library.Common.Base;
 
 namespace Library.Entities.Models
 {
@@ -17,7 +17,6 @@ namespace Library.Entities.Models
         [CustomValidation(typeof(BorrowRecord), nameof(ValidateReturnDate))]
         public DateOnly? ReturnDate { get; set; } //nullable
 
-
         //Foreign keys
         [Range(0, int.MaxValue, ErrorMessage = "InventoryRecordId must be 0 or positive.")]
         public int InventoryRecordId { get; set; }
@@ -25,14 +24,9 @@ namespace Library.Entities.Models
         [Range(0, int.MaxValue, ErrorMessage = "UserId must be 0 or positive.")]
         public int UserId { get; set; }
 
-
         //Navigation properties
         public InventoryRecord? InventoryRecord { get; set; }
-        public User? User { get; set; }
 
-
-
-        //Custom validation methods
 
         //Validate DueDate is not before BorrowDate
         public static ValidationResult? ValidateDates(BorrowRecord record, ValidationContext context)

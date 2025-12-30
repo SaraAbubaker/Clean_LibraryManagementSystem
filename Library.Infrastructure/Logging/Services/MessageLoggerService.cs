@@ -1,4 +1,4 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿using Library.Common.RabbitMqMessages.LoggingMessages;
 using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Mongo;
@@ -15,7 +15,7 @@ namespace Library.Infrastructure.Logging.Services
             _repo = new MongoRepository<MessageLog>(context, "MessageLogs");
         }
 
-        public async Task LogInfoAsync(MessageLogDto dto)
+        public async Task LogInfoAsync(MessageLogMessage dto)
         {
             var log = new MessageLog
             {

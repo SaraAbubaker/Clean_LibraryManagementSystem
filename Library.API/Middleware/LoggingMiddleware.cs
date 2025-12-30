@@ -1,10 +1,10 @@
 ﻿using Library.Infrastructure.Logging.DTOs;
-using Library.Infrastructure.Logging.Models;
 using Library.Shared.Helpers;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
 using System.Text.Json;
 using MassTransit;
+using Library.Common.RabbitMqMessages.LoggingMessages;
 
 namespace Library.API.Middleware
 {

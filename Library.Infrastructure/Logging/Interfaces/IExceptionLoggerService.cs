@@ -1,10 +1,10 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿using Library.Common.RabbitMqMessages.LoggingMessages;
 
 namespace Library.Infrastructure.Logging.Interfaces
 {
     public interface IExceptionLoggerService
     {
-        Task LogWarningAsync(WarningLogDto dto);
-        Task LogExceptionAsync(ExceptionLogDto dto);
+        Task LogWarningAsync(WarningLogMessage dto);
+        Task LogExceptionAsync(ExceptionLogMessage dto);
     }
 }

@@ -1,6 +1,6 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿using Library.Common.RabbitMqMessages.LoggingMessages;
+using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Interfaces;
-using Library.Infrastructure.Logging.Models;
 using MassTransit;
 
 namespace Library.API.Consuming

@@ -1,9 +1,9 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿using Library.Common.RabbitMqMessages.LoggingMessages;
 
 namespace Library.Infrastructure.Logging.Interfaces
 {
     public interface IMessageLoggerService
     {
-        Task LogInfoAsync(MessageLogDto dto);
+        Task LogInfoAsync(MessageLogMessage dto);
     }
 }

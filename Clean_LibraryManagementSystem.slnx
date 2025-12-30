@@ -9,4 +9,8 @@
     <Project Path="Library.Services/Library.Services.csproj" Id="49771547-080b-42e5-b26a-2430b821fcbe" />
     <Project Path="Library.Shared/Library.Shared.csproj" Id="adeee9d1-6f11-4880-9062-e330a5f92dec" />
   </Folder>
+  <Folder Name="/Library User/">
+    <Project Path="Library.UserAPI/Library.UserAPI.csproj" Id="15566c11-6dcb-4454-8d44-13b065aaad65" />
+  </Folder>
+  <Project Path="Library.Common/Library.Common.csproj" Id="54806eb9-bf2b-4069-9bb5-e552dd28d0ad" />
 </Solution>

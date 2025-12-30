@@ -1,5 +1,5 @@
 ﻿using Library.Domain.Data;
-using Library.Entities.Base;
+using Library.Common.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.Domain.Repositories

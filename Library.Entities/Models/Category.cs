@@ -1,5 +1,5 @@
 ﻿
-using Library.Entities.Base;
+using Library.Common.Base;
 
 using System.ComponentModel.DataAnnotations;
 

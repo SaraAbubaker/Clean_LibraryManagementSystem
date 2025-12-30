@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Messages\**" />
+    <Compile Remove="RabbitMqMessages\UserMessages\UserTypeMessages\**" />
+    <EmbeddedResource Remove="Messages\**" />
+    <EmbeddedResource Remove="RabbitMqMessages\UserMessages\UserTypeMessages\**" />
+    <None Remove="Messages\**" />
+    <None Remove="RabbitMqMessages\UserMessages\UserTypeMessages\**" />
+  </ItemGroup>
+
+</Project>
