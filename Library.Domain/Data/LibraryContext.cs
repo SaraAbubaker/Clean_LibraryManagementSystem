@@ -14,8 +14,6 @@ namespace Library.Domain.Data
         public DbSet<Publisher> Publishers { get; set; }
         public DbSet<InventoryRecord> InventoryRecords { get; set; }
         public DbSet<BorrowRecord> BorrowRecords { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<UserType> UserTypes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -97,35 +95,12 @@ namespace Library.Domain.Data
                 .HasForeignKey(br => br.InventoryRecordId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-
-            // - User relationships -
-            // User -> BorrowRecord (one User has many BorrowRecords)
-            modelBuilder.Entity<BorrowRecord>()
-                .HasOne(br => br.User)
-                .WithMany(u => u.BorrowRecords)
-                .HasForeignKey(br => br.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-
-            // - UserType -> User -
-            modelBuilder.Entity<User>()
-                .HasOne(u => u.UserType)
-                .WithMany(ut => ut.Users)
-                .HasForeignKey(u => u.UserTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
             #endregion
-
 
             //Globally unique CopyCode
             modelBuilder.Entity<InventoryRecord>()
                 .HasIndex(ir => ir.CopyCode)
                 .IsUnique();
-
-            //Prevents making more UserType Ids with the same Role
-            modelBuilder.Entity<UserType>()
-                .HasIndex(ut => ut.Role)
-                .IsUnique();
-
 
             #region Seeding
             modelBuilder.Entity<Author>().HasData(
@@ -136,18 +111,7 @@ namespace Library.Domain.Data
 
             modelBuilder.Entity<Publisher>().HasData
                 (new Publisher { Id = -1, Name = "Unknown", CreatedDate = today });
-
-            modelBuilder.Entity<UserType>().HasData(
-                new UserType { Id = -1, Role = "Admin", CreatedDate = today },
-                new UserType { Id = -2, Role = "Normal", CreatedDate = today }
-            );
             #endregion
-
-
-            //Default new users to Normal role
-            modelBuilder.Entity<User>()
-                .Property(u => u.UserTypeId)
-                .HasDefaultValue(-2);
         }
     }
 }

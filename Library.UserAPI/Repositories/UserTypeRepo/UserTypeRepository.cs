@@ -1,6 +1,7 @@
-﻿using Library.Common.Base;
+﻿
 using Library.UserAPI.Data;
 using Library.UserAPI.Models;
+using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.UserAPI.Repositories.UserTypeRepo
@@ -16,27 +17,38 @@ namespace Library.UserAPI.Repositories.UserTypeRepo
             _dbSet = _context.UserTypes;
         }
 
-        public IQueryable<UserType> GetAll()
+        public IQueryable<UserType> GetAll() => _dbSet.AsQueryable();
+
+        public IQueryable<UserType> GetById(int id) => _dbSet.Where(e => e.Id == id);
+
+        public async Task AddAsync(UserType entity, int currentUserId)
         {
-            IQueryable<UserType> query = _dbSet.AsQueryable();
+            entity.CreatedByUserId = currentUserId;
+            entity.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedByUserId = currentUserId;
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.IsArchived = false;
 
-            // If UserType implements IArchivable, filter archived ones
-            if (typeof(IArchivable).IsAssignableFrom(typeof(UserType)))
-            {
-                query = query.Where(e => !e.IsArchived);
-            }
-
-            return query;
+            await _dbSet.AddAsync(entity);
         }
 
-        public IQueryable<UserType> GetById(int id)
+        public async Task UpdateAsync(UserType entity, int currentUserId)
         {
-            return _dbSet.Where(e => e.Id == id);
+            entity.LastModifiedByUserId = currentUserId;
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            _dbSet.Update(entity);
         }
 
-        public async Task CommitAsync()
+        public async Task ArchiveAsync(UserType entity, int currentUserId)
         {
-            await _context.SaveChangesAsync();
+            entity.IsArchived = true;
+            entity.ArchivedByUserId = currentUserId;
+            entity.ArchivedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedByUserId = currentUserId;
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            _dbSet.Update(entity);
         }
+
+        public async Task CommitAsync() => await _context.SaveChangesAsync();
     }
 }

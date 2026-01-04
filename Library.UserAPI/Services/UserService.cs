@@ -1,13 +1,14 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using Library.UserAPI.Repositories.UserRepo;
+﻿using Library.Common.RabbitMqMessages.UserMessages;
+using Library.Services.Interfaces;
 using Library.Shared.Exceptions;
 using Library.Shared.Helpers;
-using Mapster;
-using Library.UserAPI.Models;
 using Library.UserAPI.Interfaces;
-using Library.UserAPI.Repositories.UserTypeRepo;
-using Library.Common.RabbitMqMessages.UserMessages;
+using Library.UserAPI.Models;
+using Library.UserAPI.Repositories.UserRepo;
+using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Library.UserAPI.Services
 {
@@ -15,15 +16,20 @@ namespace Library.UserAPI.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IUserTypeRepository _userTypeRepo;
+        private readonly IBorrowService _borrowService;
+        private readonly IPasswordHasher<User> _passwordHasher;
 
         public UserService(
             IUserRepository userRepo,
-            IUserTypeRepository userTypeRepo)
+            IUserTypeRepository userTypeRepo,
+            IBorrowService borrowService,
+            IPasswordHasher<User> passwordHasher)
         {
             _userRepo = userRepo;
             _userTypeRepo = userTypeRepo;
+            _borrowService = borrowService;
+            _passwordHasher = passwordHasher;
         }
-
 
         public async Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto)
         {
@@ -40,9 +46,9 @@ namespace Library.UserAPI.Services
             if (users.Any(u => u.Email.ToLower() == emailInput.ToLower()))
                 throw new InvalidOperationException("Email already registered.");
 
-            //Normal user
+            // Normal user type lookup (from UserTypeRepo, not UserRepo)
             var userType = Validate.Exists(
-                _userTypeRepo.GetById(-2).FirstOrDefault(),
+                await _userTypeRepo.GetById(-2).FirstOrDefaultAsync(),
                 -2
             );
 
@@ -50,7 +56,9 @@ namespace Library.UserAPI.Services
             user.Username = usernameNormalized;
             user.Email = emailInput;
             user.UserTypeId = userType.Id;
-            user.BorrowRecords = new List<BorrowRecord>();
+
+            //Hash password before saving
+            user.Password = _passwordHasher.HashPassword(user, dto.Password);
 
             await _userRepo.AddAsync(user, userType.Id);
             await _userRepo.CommitAsync();
@@ -58,12 +66,11 @@ namespace Library.UserAPI.Services
             var outDto = user.Adapt<UserListMessage>();
             outDto.UserTypeId = user.UserTypeId;
             outDto.UserRole = userType.Role;
-            outDto.BorrowedBooksCount = 0;
 
             return outDto;
         }
 
-        public async Task<UserListMessage> LoginUserAsync(LoginMessage dto)
+        public async Task<UserListMessage> LoginUserAsync(LoginUserMessage dto)
         {
             Validate.ValidateModel(dto);
 
@@ -76,13 +83,24 @@ namespace Library.UserAPI.Services
                 || string.Equals(u.Email, input, StringComparison.OrdinalIgnoreCase)
             );
 
-            if (user == null || user.Password != password)
+            if (user == null)
                 throw new BadRequestException("Invalid username/email or password.");
 
-            var result = user.Adapt<UserListMessage>();
-            result.BorrowedBooksCount = user.BorrowRecords?.Count ?? 0;
+            //Verify hashed password
+            var result = _passwordHasher.VerifyHashedPassword(user, user.Password, password);
+            if (result == PasswordVerificationResult.Failed)
+                throw new BadRequestException("Invalid username/email or password.");
 
-            return result;
+            var dtoOut = user.Adapt<UserListMessage>();
+            dtoOut.UserRole = user.UserType?.Role ?? "Unknown";
+
+            //Use BorrowService to get borrow count
+            var borrowCount = _borrowService.GetBorrowDetailsQuery()
+                .Count(br => br.UserId == user.Id);
+
+            dtoOut.BorrowedBooksCount = borrowCount;
+
+            return dtoOut;
         }
 
         public IQueryable<UserListMessage> GetUserByIdQuery(int id)
@@ -91,16 +109,13 @@ namespace Library.UserAPI.Services
 
             return _userRepo.GetAll()
                 .Include(u => u.UserType)
-                .Include(u => u.BorrowRecords)
                 .AsNoTracking()
-                .Where(u => u.Id == id)
                 .Select(u => new UserListMessage
                 {
                     Id = u.Id,
                     Username = u.Username,
                     Email = u.Email,
                     UserRole = u.UserType != null ? u.UserType.Role : "Unknown",
-                    BorrowedBooksCount = u.BorrowRecords.Count()
                 });
         }
 
@@ -108,15 +123,13 @@ namespace Library.UserAPI.Services
         {
             return _userRepo.GetAll()
                 .Include(u => u.UserType)
-                .Include(u => u.BorrowRecords)
                 .AsNoTracking()
                 .Select(u => new UserListMessage
                 {
                     Id = u.Id,
                     Username = u.Username,
                     Email = u.Email,
-                    UserRole = u.UserType != null ? u.UserType.Role : "Unknown",
-                    BorrowedBooksCount = u.BorrowRecords.Count()
+                    UserRole = u.UserType != null ? u.UserType.Role : "Unknown"
                 });
         }
 
@@ -130,17 +143,18 @@ namespace Library.UserAPI.Services
                 id
             );
 
-            if (user.BorrowRecords != null && user.BorrowRecords.Any(br => br.ReturnDate == null))
+            var hasActiveBorrows = _borrowService.GetBorrowDetailsQuery()
+                .Any(br => br.UserId == user.Id && br.ReturnDate == null);
+
+            if (hasActiveBorrows)
                 throw new InvalidOperationException("User has active borrowed books. Return them before deleting.");
 
             await _userRepo.ArchiveAsync(user, performedByUserId);
             await _userRepo.CommitAsync();
 
             var dto = user.Adapt<UserListMessage>();
-            dto.BorrowedBooksCount = user.BorrowRecords?.Count ?? 0;
 
             return dto;
         }
-
     }
 }

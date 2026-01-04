@@ -1,4 +1,4 @@
-﻿using Library.Shared.Helpers;
+﻿
 using System.ComponentModel.DataAnnotations;
 
 namespace Library.Common.RabbitMqMessages.UserTypeMessages
@@ -6,7 +6,7 @@ namespace Library.Common.RabbitMqMessages.UserTypeMessages
     public class UpdateUserTypeMessage
     {
         [Required]
-        [Positive]
+        [Range(1, int.MaxValue)]
         public int Id { get; set; }
 
         [Required]

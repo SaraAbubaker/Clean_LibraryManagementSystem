@@ -15,6 +15,5 @@ namespace Library.Shared.DTOs.BorrowRecord
         public string? CopyCode { get; set; }
 
         public int UserId { get; set; }
-        public string? Username { get; set; }
     }
 }

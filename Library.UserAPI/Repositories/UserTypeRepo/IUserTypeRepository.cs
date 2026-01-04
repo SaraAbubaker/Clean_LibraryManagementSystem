@@ -1,11 +1,18 @@
-﻿using Library.UserAPI.Models;
+﻿
+using Library.UserAPI.Models;
 
 namespace Library.UserAPI.Repositories.UserTypeRepo
 {
-    public interface IUserTypeRepository
+    namespace Library.UserAPI.Interfaces
     {
-        IQueryable<UserType> GetAll();
-        IQueryable<UserType> GetById(int id);
-        Task CommitAsync();
+        public interface IUserTypeRepository
+        {
+            IQueryable<UserType> GetAll();
+            IQueryable<UserType> GetById(int id);
+            Task AddAsync(UserType entity, int currentUserId);
+            Task UpdateAsync(UserType entity, int currentUserId);
+            Task ArchiveAsync(UserType entity, int currentUserId);
+            Task CommitAsync();
+        }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Library.Common.RabbitMqMessages.UserMessages
 {
-    public class LoginMessage
+    public class LoginUserMessage
     {
         [Required]
         public string UsernameOrEmail { get; set; } = null!;

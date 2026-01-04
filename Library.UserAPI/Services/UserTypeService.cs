@@ -1,11 +1,10 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Library.Common.RabbitMqMessages.UserTypeMessages;
 using Library.Shared.Helpers;
-using Mapster;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
-using Library.Common.RabbitMqMessages.UserTypeMessages;
-using Library.UserAPI.Repositories.UserTypeRepo;
+using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace Library.UserAPI.Services
 {
@@ -18,14 +17,20 @@ namespace Library.UserAPI.Services
             _userTypeRepo = userTypeRepo;
         }
 
-        //CRUD
         public async Task<UserTypeListMessage> CreateUserTypeAsync(CreateUserTypeMessage dto, int createdByUserId)
         {
             Validate.ValidateModel(dto);
             Validate.Positive(createdByUserId, nameof(createdByUserId));
 
-            var userType = dto.Adapt<UserType>();
+            var existingAdmin = await _userTypeRepo.GetAll()
+                .FirstOrDefaultAsync(ut => ut.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase));
 
+            Validate.NotNull(
+                dto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && existingAdmin != null ? null : new object(),
+                "The Admin role already exists and cannot be duplicated."
+            );
+
+            var userType = dto.Adapt<UserType>();
             await _userTypeRepo.AddAsync(userType, createdByUserId);
             await _userTypeRepo.CommitAsync();
 
@@ -47,9 +52,8 @@ namespace Library.UserAPI.Services
         {
             Validate.Positive(id, nameof(id));
 
-            return _userTypeRepo.GetAll()
+            return _userTypeRepo.GetById(id)
                 .AsNoTracking()
-                .Where(ut => ut.Id == id)
                 .Select(ut => new UserTypeListMessage
                 {
                     Id = ut.Id,
@@ -68,6 +72,14 @@ namespace Library.UserAPI.Services
                 userTypeId
             );
 
+            // Prevent renaming Admin role
+            Validate.NotEmpty(dto.Role, nameof(dto.Role));
+            if (userType.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) &&
+                !dto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("The Admin role cannot be renamed or downgraded.");
+            }
+
             userType.Role = dto.Role;
             await _userTypeRepo.UpdateAsync(userType, userId);
             await _userTypeRepo.CommitAsync();
@@ -83,6 +95,12 @@ namespace Library.UserAPI.Services
             var userType = Validate.Exists(
                 await _userTypeRepo.GetById(id).FirstOrDefaultAsync(),
                 id
+            );
+
+            // Prevent archiving Admin role
+            Validate.NotNull(
+                userType.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) ? null : new object(),
+                "The Admin role cannot be archived."
             );
 
             await _userTypeRepo.ArchiveAsync(userType, archivedByUserId);

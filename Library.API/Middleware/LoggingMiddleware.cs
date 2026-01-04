@@ -1,4 +1,4 @@
-﻿using Library.Infrastructure.Logging.DTOs;
+﻿
 using Library.Shared.Helpers;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
@@ -51,7 +51,7 @@ namespace Library.API.Middleware
                 string serviceName = actionDescriptor?.ActionName ?? requestSummary;
 
                 // Exception → publish to ExceptionQueue
-                var exceptionDto = new ExceptionLogDto
+                var exceptionDto = new ExceptionLogMessage
                 {
                     Guid = Guid.NewGuid(),
                     CreatedAt = DateTime.Now,
@@ -90,7 +90,7 @@ namespace Library.API.Middleware
                     else if (responseText.Contains("\"success\":true"))
                     {
                         // Info → publish to MessageQueue
-                        var messageDto = new MessageLogDto
+                        var messageDto = new MessageLogMessage
                         {
                             Guid = Guid.NewGuid(),
                             CreatedAt = DateTime.Now,
@@ -122,7 +122,7 @@ namespace Library.API.Middleware
                     }
                     catch (Exception ex)
                     {
-                        var failedDto = new FailedLogDto
+                        var failedDto = new FailedLogMessage
                         {
                             Guid = Guid.NewGuid(),
                             CreatedAt = DateTime.Now,
@@ -152,7 +152,7 @@ namespace Library.API.Middleware
             string responseText,
             string warningMessage)
         {
-            var warningDto = new WarningLogDto
+            var warningDto = new WarningLogMessage
             {
                 Guid = Guid.NewGuid(),
                 CreatedAt = DateTime.Now,

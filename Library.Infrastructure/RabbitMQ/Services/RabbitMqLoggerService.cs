@@ -1,11 +1,11 @@
 ﻿
 using Library.Infrastructure.RabbitMQ.Configuation;
 using Library.Infrastructure.Logging.Interfaces;
-using Library.Infrastructure.Logging.DTOs;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;
+using Library.Common.RabbitMqMessages.LoggingMessages;
 
 namespace Library.Infrastructure.RabbitMQ.Services
 {
@@ -21,20 +21,20 @@ namespace Library.Infrastructure.RabbitMQ.Services
         }
 
         // IMessageLoggerService implementation
-        public async Task LogInfoAsync(MessageLogDto dto)
+        public async Task LogInfoAsync(MessageLogMessage dto)
         {
             var json = JsonSerializer.Serialize(dto);
             await PublishAsync(_settings.MessageQueue, json);
         }
 
         // IExceptionLoggerService implementation
-        public async Task LogWarningAsync(WarningLogDto dto)
+        public async Task LogWarningAsync(WarningLogMessage dto)
         {
             var json = JsonSerializer.Serialize(dto);
             await PublishAsync(_settings.ExceptionQueue, json);
         }
 
-        public async Task LogExceptionAsync(ExceptionLogDto dto)
+        public async Task LogExceptionAsync(ExceptionLogMessage dto)
         {
             var json = JsonSerializer.Serialize(dto);
             await PublishAsync(_settings.ExceptionQueue, json);

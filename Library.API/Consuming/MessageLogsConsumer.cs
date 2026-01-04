@@ -1,11 +1,10 @@
 ﻿using Library.Common.RabbitMqMessages.LoggingMessages;
-using Library.Infrastructure.Logging.DTOs;
 using Library.Infrastructure.Logging.Interfaces;
 using MassTransit;
 
 namespace Library.API.Consuming
 {
-    public class MessageLogsConsumer : IConsumer<MessageLogDto>
+    public class MessageLogsConsumer : IConsumer<MessageLogMessage>
     {
         private readonly IMessageLoggerService _messageLogger;
         private readonly IFailedLoggerService _failedLogger;
@@ -16,7 +15,7 @@ namespace Library.API.Consuming
             _failedLogger = failedLogger;
         }
 
-        public async Task Consume(ConsumeContext<MessageLogDto> context)
+        public async Task Consume(ConsumeContext<MessageLogMessage> context)
         {
             try
             {
@@ -32,7 +31,7 @@ namespace Library.API.Consuming
 
         private async Task LogFailedAsync(string reason, object originalMessage, string consumerName, Exception ex)
         {
-            var failedDto = new FailedLogDto
+            var failedDto = new FailedLogMessage
             {
                 Guid = Guid.NewGuid(),
                 CreatedAt = DateTime.Now,

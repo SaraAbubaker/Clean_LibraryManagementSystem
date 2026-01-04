@@ -1,26 +1,32 @@
 ﻿using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
+using Library.UserAPI.Models;
 using Library.UserAPI.Repositories.UserRepo;
 using Library.UserAPI.Repositories.UserTypeRepo;
+using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
 using Library.UserAPI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add DbContext for UserDB
+//Add DbContext for UserDB
 builder.Services.AddDbContext<UserContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("UserDB")));
 
-// 2. Add controllers + JSON options
+//Add controllers + JSON options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-// 3. Register Swagger services
+//Register Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -28,17 +34,49 @@ builder.Services.AddSwaggerGen(c =>
     c.UseInlineDefinitionsForEnums();
 });
 
-// 4. Register repositories
+//Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserTypeRepository, UserTypeRepository>();
 
-// 5. Register services
+//Register services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserTypeService, UserTypeService>();
 
+//Register Password Hasher
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+//Add Authentication + Authorization
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer("LocalJWT", options =>
+{
+    var jwtKey = builder.Configuration["Jwt:Key"]
+                 ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = "your-api",
+        ValidateAudience = true,
+        ValidAudience = "your-api-users",
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+})
+.AddJwtBearer("AzureAD", options =>
+{
+    options.Authority = $"https://login.microsoftonline.com/{builder.Configuration["AzureAd:TenantId"]}/v2.0";
+    options.Audience = builder.Configuration["AzureAd:ClientId"];
+});
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
-// 6. Exception handler (simpler than Library API, but you can expand)
+//Exception handler
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -48,7 +86,7 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-// 7. Swagger
+//Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -57,6 +95,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+//Authentication before Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

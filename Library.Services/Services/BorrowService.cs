@@ -34,7 +34,6 @@ namespace Library.Services.Services
             return _borrowRepo.GetAll()
                 .AsNoTracking()
                 .Include(b => b.InventoryRecord)
-                .Include(b => b.User)
                 .Select(b => new BorrowListDto
                 {
                     Id = b.Id,
@@ -42,7 +41,7 @@ namespace Library.Services.Services
                     DueDate = b.DueDate,
                     ReturnDate = b.ReturnDate,
                     CopyCode = b.InventoryRecord != null ? b.InventoryRecord.CopyCode : null,
-                    Username = b.User != null ? b.User.Username : null,
+                    UserId = b.UserId,
                     IsOverdue = b.ReturnDate == null && b.DueDate < today,
                     OverdueDays = EF.Functions.DateDiffDay(
                         b.DueDate.ToDateTime(TimeOnly.MinValue),

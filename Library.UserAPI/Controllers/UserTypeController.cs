@@ -1,6 +1,7 @@
 ﻿using Library.Common.RabbitMqMessages.UserTypeMessages;
 using Library.Shared.DTOs.ApiResponses;
 using Library.UserAPI.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Library.UserAPI.Controllers
@@ -16,6 +17,8 @@ namespace Library.UserAPI.Controllers
             _service = service;
         }
 
+        // 🔐 Only Admins can create new user types
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpPost]
         public async Task<IActionResult> CreateUserType([FromBody] CreateUserTypeMessage dto, [FromQuery] int createdByUserId)
         {
@@ -30,6 +33,8 @@ namespace Library.UserAPI.Controllers
             }
         }
 
+        // 🔓 Any authenticated user can query user types
+        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpGet("query")]
         public IActionResult GetAllUserTypesQuery()
         {
@@ -40,10 +45,11 @@ namespace Library.UserAPI.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponseHelper.Failure<List<UserTypeListDto>>(ex.Message));
+                return BadRequest(ApiResponseHelper.Failure<List<UserTypeListMessage>>(ex.Message));
             }
         }
 
+        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpGet("query/{id}")]
         public IActionResult GetUserTypeByIdQuery(int id)
         {
@@ -52,18 +58,20 @@ namespace Library.UserAPI.Controllers
                 var query = _service.GetUserTypeByIdQuery(id);
                 var userType = query.FirstOrDefault();
                 if (userType == null)
-                    return NotFound(ApiResponseHelper.Failure<UserTypeListDto>("User type not found"));
+                    return NotFound(ApiResponseHelper.Failure<UserTypeListMessage>("User type not found"));
 
                 return Ok(ApiResponseHelper.Success(userType));
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponseHelper.Failure<UserTypeListDto>(ex.Message));
+                return BadRequest(ApiResponseHelper.Failure<UserTypeListMessage>(ex.Message));
             }
         }
 
+        // 🔐 Only Admins can update user types
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUserType([FromBody] UpdateUserTypeDto dto, int id, [FromQuery] int userId)
+        public async Task<IActionResult> UpdateUserType([FromBody] UpdateUserTypeMessage dto, int id, [FromQuery] int userId)
         {
             try
             {
@@ -72,10 +80,12 @@ namespace Library.UserAPI.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponseHelper.Failure<UpdateUserTypeDto>(ex.Message));
+                return BadRequest(ApiResponseHelper.Failure<UpdateUserTypeMessage>(ex.Message));
             }
         }
 
+        // 🔐 Only Admins can archive user types
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpPut("archive/{id}")]
         public async Task<IActionResult> ArchiveUserType(int id, [FromQuery] int userId)
         {
