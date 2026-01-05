@@ -8,6 +8,7 @@ namespace Library.UserAPI.Interfaces
         Task<UserListMessage> LoginUserAsync(LoginUserMessage dto);
         IQueryable<UserListMessage> GetUserByIdQuery(int id);
         IQueryable<UserListMessage> GetAllUsersQuery();
-        Task<UserListMessage> ArchiveUserAsync(int id, int performedByUserId);
+        Task<LogoutUserMessage> LogoutUserAsync(int userId, string token);
+        Task<UserListMessage> DeactivateUserAsync(int id, int performedByUserId);
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Library.Common.RabbitMqMessages.UserMessages;
+using Library.Services.Services;
 using Library.Shared.DTOs.ApiResponses;
 using Library.UserAPI.Interfaces;
+using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -16,14 +18,15 @@ namespace Library.UserAPI.Controllers
     {
         private readonly IUserService _service;
         private readonly IConfiguration _config;
+        private readonly IAuthService _authService;
 
-        public UserController(IUserService service, IConfiguration config)
+        public UserController(IUserService service, IConfiguration config, IAuthService authService)
         {
             _service = service;
             _config = config;
+            _authService = authService;
         }
 
-        // 🔓 Public: anyone can register
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser(RegisterUserMessage dto)
@@ -39,7 +42,6 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // 🔓 Public: login issues JWT
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> LoginUser(LoginUserMessage dto)
@@ -51,7 +53,7 @@ namespace Library.UserAPI.Controllers
                     return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>("Invalid credentials"));
 
                 // Use UserRole from your DTO
-                var token = GenerateJwtToken(user.Username, user.Id.ToString(), user.UserRole);
+                var token = _authService.GenerateJwtToken(user);
 
                 return Ok(ApiResponseHelper.Success(new { token }));
             }
@@ -61,7 +63,6 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // 🔐 Protected: requires valid JWT
         [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpGet("query")]
         public IActionResult GetAllUsersQuery()
@@ -77,7 +78,6 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // 🔐 Protected: requires valid JWT
         [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
         [HttpGet("query/{id}")]
         public IActionResult GetUserByIdQuery(int id)
@@ -97,15 +97,13 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // 🔐 Protected: requires valid JWT
-        // Only Admins can archive users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> ArchiveUser(int id, [FromQuery] int performedByUserId)
+        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromQuery] int userId, [FromBody] string token)
         {
             try
             {
-                var result = await _service.ArchiveUserAsync(id, performedByUserId);
+                var result = await _service.LogoutUserAsync(userId, token);
                 return Ok(ApiResponseHelper.Success(result));
             }
             catch (KeyNotFoundException)
@@ -122,32 +120,28 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-
-        // 🔑 Helper: generate JWT
-        private string GenerateJwtToken(string username, string userId, string role)
+        // Only Admins can archive users
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> DeactivateUser(int id, [FromQuery] int performedByUserId)
         {
-            var jwtKey = _config["Jwt:Key"]
-                         ?? throw new InvalidOperationException("Jwt:Key is not configured.");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            try
             {
-                new Claim(JwtRegisteredClaimNames.Sub, username),
-                new Claim("userId", userId),
-                new Claim(ClaimTypes.Role, role) // 🔑 role claim
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: "your-api",
-                audience: "your-api-users",
-                claims: claims,
-                expires: DateTime.Now.AddHours(1),
-                signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+                var result = await _service.DeactivateUserAsync(id, performedByUserId);
+                return Ok(ApiResponseHelper.Success(result));
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(ApiResponseHelper.Failure<object>("User not found"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
+            }
         }
-
     }
 }

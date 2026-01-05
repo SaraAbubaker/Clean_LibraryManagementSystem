@@ -51,21 +51,25 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer("LocalJWT", options =>
-{
-    var jwtKey = builder.Configuration["Jwt:Key"]
-                 ?? throw new InvalidOperationException("Jwt:Key is not configured.");
-
-    options.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer("LocalJWT", options =>
     {
-        ValidateIssuer = true,
-        ValidIssuer = "your-api",
-        ValidateAudience = true,
-        ValidAudience = "your-api-users",
-        ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-    };
-})
+        var jwtKey = builder.Configuration["Jwt:Key"]
+                     ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey)
+            )
+        };
+    })
+
 .AddJwtBearer("AzureAD", options =>
 {
     options.Authority = $"https://login.microsoftonline.com/{builder.Configuration["AzureAd:TenantId"]}/v2.0";

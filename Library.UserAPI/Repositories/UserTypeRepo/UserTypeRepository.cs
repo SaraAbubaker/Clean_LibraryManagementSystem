@@ -1,7 +1,7 @@
 ﻿
 using Library.UserAPI.Data;
+using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
-using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.UserAPI.Repositories.UserTypeRepo

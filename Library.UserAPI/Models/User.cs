@@ -4,7 +4,7 @@ using Library.Common.Base;
 
 namespace Library.UserAPI.Models
 {
-    public class User : AuditBase, IArchivable
+    public class User : AuditBase
     {
         [Required]
         [StringLength(30, MinimumLength = 3)]
@@ -28,5 +28,10 @@ namespace Library.UserAPI.Models
 
         //Navigation Property
         public UserType? UserType { get; set; }
+
+        //Deactivation fields
+        public bool IsActive { get; set; } = true; 
+        public DateOnly? DeactivatedDate { get; set; } 
+        public int? DeactivatedByUserId { get; set; }
     }
 }

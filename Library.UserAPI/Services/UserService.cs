@@ -5,10 +5,9 @@ using Library.Shared.Helpers;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Library.UserAPI.Repositories.UserRepo;
-using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Library.UserAPI.Services
 {
@@ -133,7 +132,26 @@ namespace Library.UserAPI.Services
                 });
         }
 
-        public async Task<UserListMessage> ArchiveUserAsync(int id, int performedByUserId)
+        public async Task<LogoutUserMessage> LogoutUserAsync(int userId, string token)
+        {
+            Validate.Positive(userId, nameof(userId));
+            Validate.NotEmpty(token, nameof(token));
+
+            var user = Validate.Exists(
+                await _userRepo.GetById(userId).FirstOrDefaultAsync(),
+                userId
+            );
+            return new LogoutUserMessage
+            {
+                Id = user.Id,
+                Username = user.Username,
+                LoggedOutAt = DateTime.Now,
+                Status = "Success"
+            };
+        }
+
+        //TO DO make is archived to be deactived with timestamps and all
+        public async Task<UserListMessage> DeactivateUserAsync(int id, int performedByUserId)
         {
             Validate.Positive(id, nameof(id));
             Validate.Positive(performedByUserId, nameof(performedByUserId));
@@ -149,10 +167,11 @@ namespace Library.UserAPI.Services
             if (hasActiveBorrows)
                 throw new InvalidOperationException("User has active borrowed books. Return them before deleting.");
 
-            await _userRepo.ArchiveAsync(user, performedByUserId);
+            await _userRepo.DeactivateAsync(user, performedByUserId);
             await _userRepo.CommitAsync();
 
             var dto = user.Adapt<UserListMessage>();
+            dto.UserRole = user.UserType?.Role ?? "Unknown";
 
             return dto;
         }

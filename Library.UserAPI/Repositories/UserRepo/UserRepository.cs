@@ -55,13 +55,13 @@ namespace Library.UserAPI.Repositories.UserRepo
             _users.Update(entity);
         }
 
-        public async Task ArchiveAsync(User entity, int currentUserId)
+        public async Task DeactivateAsync(User entity, int currentUserId)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-            entity.IsArchived = true;
-            entity.ArchivedByUserId = currentUserId;
-            entity.ArchivedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.IsActive = false;
+            entity.DeactivatedByUserId = currentUserId;
+            entity.DeactivatedDate = DateOnly.FromDateTime(DateTime.Now);
             entity.LastModifiedByUserId = currentUserId;
             entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
 
