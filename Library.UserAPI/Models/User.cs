@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Library.Common.Base;
 
 namespace Library.UserAPI.Models
@@ -8,30 +7,27 @@ namespace Library.UserAPI.Models
     {
         [Required]
         [StringLength(30, MinimumLength = 3)]
-        [RegularExpression(@"^[a-zA-Z0-9_.-]+$",
-            ErrorMessage = "Username must contain letters, numbers, underscore, dot and dash only.")]
+        [RegularExpression(@"^[a-zA-Z0-9_.-]+$", ErrorMessage = "Username must contain letters, numbers, underscore, dot and dash only.")]
         public string Username { get; set; } = null!;
 
-        //Email validation
+        // Email validation
         [Required]
         [EmailAddress(ErrorMessage = "Invalid email address.")]
         public string Email { get; set; } = null!;
 
-        //Password Validation
+        // Store only the hashed password
         [Required]
-        [RegularExpression(@"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$",
-            ErrorMessage = "Password must be at least 8 characters, contain upper, lower case, and a number.")]
-        public string Password { get; set; } = null!;
+        public string HashedPassword { get; set; } = null!;
 
-        //Foreign Key
+        // Foreign Key
         public int UserTypeId { get; set; }
 
-        //Navigation Property
+        // Navigation Property
         public UserType? UserType { get; set; }
 
-        //Deactivation fields
-        public bool IsActive { get; set; } = true; 
-        public DateOnly? DeactivatedDate { get; set; } 
+        // Deactivation fields
+        public bool IsActive { get; set; } = true;
+        public DateOnly? DeactivatedDate { get; set; }
         public int? DeactivatedByUserId { get; set; }
     }
 }

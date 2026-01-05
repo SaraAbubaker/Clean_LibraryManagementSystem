@@ -2,7 +2,6 @@
 using Library.Shared.Helpers;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
-using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 

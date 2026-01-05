@@ -3,7 +3,6 @@ using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Library.UserAPI.Repositories.UserRepo;
 using Library.UserAPI.Repositories.UserTypeRepo;
-using Library.UserAPI.Repositories.UserTypeRepo.Library.UserAPI.Interfaces;
 using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;

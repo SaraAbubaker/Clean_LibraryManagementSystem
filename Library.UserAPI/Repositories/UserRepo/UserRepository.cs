@@ -9,16 +9,13 @@ namespace Library.UserAPI.Repositories.UserRepo
     {
         private readonly UserContext _context;
         private readonly DbSet<User> _users;
-        private readonly DbSet<UserType> _userTypes;
 
         public UserRepository(UserContext context)
         {
             _context = context;
             _users = _context.Users;
-            _userTypes = _context.UserTypes;
         }
 
-        // ---------------- USER METHODS ----------------
         public IQueryable<User> GetAll()
         {
             IQueryable<User> query = _users.AsQueryable();
@@ -68,37 +65,20 @@ namespace Library.UserAPI.Repositories.UserRepo
             _users.Update(entity);
         }
 
-        // ---------------- USERTYPE METHODS ----------------
-        public IQueryable<UserType> GetAllUserTypes()
+        public async Task ReactivateAsync(User entity, int currentUserId)
         {
-            return _userTypes.AsNoTracking();
-        }
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-        public IQueryable<UserType> GetUserTypeById(int id)
-        {
-            return _userTypes.Where(ut => ut.Id == id);
-        }
-
-        public async Task AddAsync(UserType entity, int currentUserId)
-        {
-            entity.CreatedByUserId = currentUserId;
-            entity.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
-            entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
-            entity.IsArchived = false;
-
-            await _userTypes.AddAsync(entity);
-        }
-
-        public async Task UpdateAsync(UserType entity, int currentUserId)
-        {
+            entity.IsActive = true;
+            entity.DeactivatedByUserId = null;
+            entity.DeactivatedDate = null;
             entity.LastModifiedByUserId = currentUserId;
             entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
 
-            _userTypes.Update(entity);
+            _users.Update(entity);
         }
 
-        public async Task ArchiveAsync(UserType entity, int currentUserId)
+        public async Task ArchiveAsync(User entity, int currentUserId)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
@@ -108,10 +88,9 @@ namespace Library.UserAPI.Repositories.UserRepo
             entity.LastModifiedByUserId = currentUserId;
             entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
 
-            _userTypes.Update(entity);
+            _users.Update(entity);
         }
 
-        // ---------------- COMMIT ----------------
         public async Task CommitAsync()
         {
             await _context.SaveChangesAsync();

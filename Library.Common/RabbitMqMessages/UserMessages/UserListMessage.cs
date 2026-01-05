@@ -10,5 +10,7 @@
         public int UserTypeId { get; set; }
         public string UserRole { get; set; } = null!;
         public int BorrowedBooksCount { get; set; }
+
+        public string Token { get; set; } = null!;
     }
 }

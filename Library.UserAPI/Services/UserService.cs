@@ -8,6 +8,10 @@ using Library.UserAPI.Repositories.UserRepo;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Library.UserAPI.Services
 {
@@ -17,17 +21,20 @@ namespace Library.UserAPI.Services
         private readonly IUserTypeRepository _userTypeRepo;
         private readonly IBorrowService _borrowService;
         private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly IConfiguration _config;
 
         public UserService(
             IUserRepository userRepo,
             IUserTypeRepository userTypeRepo,
             IBorrowService borrowService,
-            IPasswordHasher<User> passwordHasher)
+            IPasswordHasher<User> passwordHasher,
+            IConfiguration config)
         {
             _userRepo = userRepo;
             _userTypeRepo = userTypeRepo;
             _borrowService = borrowService;
             _passwordHasher = passwordHasher;
+            _config = config;
         }
 
         public async Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto)
@@ -57,8 +64,8 @@ namespace Library.UserAPI.Services
             user.UserTypeId = userType.Id;
 
             //Hash password before saving
-            user.Password = _passwordHasher.HashPassword(user, dto.Password);
-
+            user.HashedPassword = _passwordHasher.HashPassword(user, dto.Password);
+            
             await _userRepo.AddAsync(user, userType.Id);
             await _userRepo.CommitAsync();
 
@@ -85,19 +92,54 @@ namespace Library.UserAPI.Services
             if (user == null)
                 throw new BadRequestException("Invalid username/email or password.");
 
-            //Verify hashed password
-            var result = _passwordHasher.VerifyHashedPassword(user, user.Password, password);
+            // Verify hashed password
+            var result = _passwordHasher.VerifyHashedPassword(user, user.HashedPassword, password);
             if (result == PasswordVerificationResult.Failed)
                 throw new BadRequestException("Invalid username/email or password.");
 
-            var dtoOut = user.Adapt<UserListMessage>();
-            dtoOut.UserRole = user.UserType?.Role ?? "Unknown";
+            // Block archived accounts
+            if (user.IsArchived)
+                throw new UnauthorizedAccessException("Archived accounts cannot log in.");
 
-            //Use BorrowService to get borrow count
+            // Block deactivated accounts
+            if (!user.IsActive)
+                throw new UnauthorizedAccessException("Deactivated accounts cannot log in.");
+
+            // Build claims for JWT
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.UserType?.Role ?? "Normal")
+            };
+
+            // Null-safe config lookup
+            var jwtKey = _config["Jwt:Key"]
+                ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            // Borrow count from BorrowService
             var borrowCount = _borrowService.GetBorrowDetailsQuery()
                 .Count(br => br.UserId == user.Id);
 
+            // Map and enrich in one go
+            var dtoOut = user.Adapt<UserListMessage>();
+            dtoOut.UserRole = user.UserType?.Role ?? "Unknown";
             dtoOut.BorrowedBooksCount = borrowCount;
+            dtoOut.Token = tokenString;
 
             return dtoOut;
         }
@@ -150,7 +192,6 @@ namespace Library.UserAPI.Services
             };
         }
 
-        //TO DO make is archived to be deactived with timestamps and all
         public async Task<UserListMessage> DeactivateUserAsync(int id, int performedByUserId)
         {
             Validate.Positive(id, nameof(id));
@@ -165,9 +206,50 @@ namespace Library.UserAPI.Services
                 .Any(br => br.UserId == user.Id && br.ReturnDate == null);
 
             if (hasActiveBorrows)
-                throw new InvalidOperationException("User has active borrowed books. Return them before deleting.");
+                throw new InvalidOperationException("User has active borrowed books. Return them before deactivation.");
 
             await _userRepo.DeactivateAsync(user, performedByUserId);
+            await _userRepo.CommitAsync();
+
+            var dto = user.Adapt<UserListMessage>();
+            dto.UserRole = user.UserType?.Role ?? "Unknown";
+
+            return dto;
+        }
+
+        public async Task<UserListMessage> ReactivateUserAsync(int id, int performedByUserId)
+        {
+            Validate.Positive(id, nameof(id));
+            Validate.Positive(performedByUserId, nameof(performedByUserId));
+
+            var user = Validate.Exists(
+                await _userRepo.GetById(id).FirstOrDefaultAsync(),
+                id
+            );
+
+            if (user.IsArchived)
+                throw new InvalidOperationException("Archived users cannot be reactivated.");
+
+            await _userRepo.ReactivateAsync(user, performedByUserId);
+            await _userRepo.CommitAsync();
+
+            var dto = user.Adapt<UserListMessage>();
+            dto.UserRole = user.UserType?.Role ?? "Unknown";
+
+            return dto;
+        }
+
+        public async Task<UserListMessage> ArchiveUserAsync(int id, int performedByUserId)
+        {
+            Validate.Positive(id, nameof(id));
+            Validate.Positive(performedByUserId, nameof(performedByUserId));
+
+            var user = Validate.Exists(
+                await _userRepo.GetById(id).FirstOrDefaultAsync(),
+                id
+            );
+
+            await _userRepo.ArchiveAsync(user, performedByUserId);
             await _userRepo.CommitAsync();
 
             var dto = user.Adapt<UserListMessage>();

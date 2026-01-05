@@ -121,13 +121,62 @@ namespace Library.UserAPI.Controllers
         }
 
         // Only Admins can archive users
+        // Only Admins can deactivate users
         [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
-        [HttpPut("{id}")]
+        [HttpPut("{id}/deactivate")]
         public async Task<IActionResult> DeactivateUser(int id, [FromQuery] int performedByUserId)
         {
             try
             {
                 var result = await _service.DeactivateUserAsync(id, performedByUserId);
+                return Ok(ApiResponseHelper.Success(result));
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(ApiResponseHelper.Failure<object>("User not found"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
+            }
+        }
+
+        // Only Admins can reactivate users
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [HttpPut("{id}/reactivate")]
+        public async Task<IActionResult> ReactivateUser(int id, [FromQuery] int performedByUserId)
+        {
+            try
+            {
+                var result = await _service.ReactivateUserAsync(id, performedByUserId);
+                return Ok(ApiResponseHelper.Success(result));
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(ApiResponseHelper.Failure<object>("User not found"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
+            }
+        }
+
+        // Only Admins can archive users
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [HttpPut("{id}/archive")]
+        public async Task<IActionResult> ArchiveUser(int id, [FromQuery] int performedByUserId)
+        {
+            try
+            {
+                var result = await _service.ArchiveUserAsync(id, performedByUserId);
                 return Ok(ApiResponseHelper.Success(result));
             }
             catch (KeyNotFoundException)
