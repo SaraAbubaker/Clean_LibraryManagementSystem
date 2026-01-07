@@ -46,7 +46,7 @@ namespace Library.API.Consuming
             var failedDto = new FailedLogMessage
             {
                 Guid = Guid.NewGuid(),
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
                 Level = MyLogLevel.Failed,
                 ServiceName = consumerName,
                 OriginalMessage = System.Text.Json.JsonSerializer.Serialize(originalMessage),

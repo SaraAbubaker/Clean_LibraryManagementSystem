@@ -29,7 +29,7 @@ namespace Library.Services.Services
         //ListAll
         public IQueryable<BorrowListDto> GetBorrowDetailsQuery()
         {
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             return _borrowRepo.GetAll()
                 .AsNoTracking()
@@ -89,8 +89,8 @@ namespace Library.Services.Services
             {
                 InventoryRecordId = copy.Id,
                 UserId = userId,
-                BorrowDate = DateOnly.FromDateTime(DateTime.Now),
-                DueDate = dto.DueDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(14)),
+                BorrowDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                DueDate = dto.DueDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)),
                 ReturnDate = null,
             };
 
@@ -121,7 +121,7 @@ namespace Library.Services.Services
             if (record.ReturnDate != null)
                 throw new ConflictException($"Borrow record with id {borrowRecordId} has already been returned.");
 
-            record.ReturnDate = DateOnly.FromDateTime(DateTime.Now);
+            record.ReturnDate = DateOnly.FromDateTime(DateTime.UtcNow);
             await _borrowRepo.UpdateAsync(record, currentUserId);
             await _borrowRepo.CommitAsync();
 
@@ -133,7 +133,7 @@ namespace Library.Services.Services
         //Overdue Logic
         public IQueryable<BorrowRecord> GetOverdueRecordsQuery()
         {
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             return _borrowRepo.GetAll()
                 .AsNoTracking()
                 .Where(r => r.ReturnDate == null && r.DueDate < today);
@@ -145,7 +145,7 @@ namespace Library.Services.Services
 
             if (record.ReturnDate != null) return false;
 
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             return today > record.DueDate;
         }
 

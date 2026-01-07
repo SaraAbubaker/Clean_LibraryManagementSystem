@@ -17,8 +17,8 @@ namespace Library.UserAPI.Controllers
             _service = service;
         }
 
-        // 🔐 Only Admins can create new user types
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        //Only Admins can create new user types
+        [Authorize(Policy = "RequireAdminRole", AuthenticationSchemes = "LocalJWT")]
         [HttpPost]
         public async Task<IActionResult> CreateUserType([FromBody] CreateUserTypeMessage dto, [FromQuery] int createdByUserId)
         {
@@ -29,12 +29,12 @@ namespace Library.UserAPI.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponseHelper.Failure<CreateUserTypeMessage>(ex.Message));
+                return BadRequest(ApiResponseHelper.Failure<object>(ex.Message));
             }
         }
 
-        // 🔓 Any authenticated user can query user types
-        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
+        //Any authenticated user can query user types
+        [Authorize(AuthenticationSchemes = "LocalJWT")]
         [HttpGet("query")]
         public IActionResult GetAllUserTypesQuery()
         {
@@ -49,7 +49,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(AuthenticationSchemes = "LocalJWT")]
         [HttpGet("query/{id}")]
         public IActionResult GetUserTypeByIdQuery(int id)
         {
@@ -68,8 +68,8 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // 🔐 Only Admins can update user types
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        //Only Admins can update user types
+        [Authorize(Policy = "RequireAdminRole", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUserType([FromBody] UpdateUserTypeMessage dto, int id, [FromQuery] int userId)
         {
@@ -84,8 +84,8 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // 🔐 Only Admins can archive user types
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        //Only Admins can archive user types
+        [Authorize(Policy = "RequireAdminRole", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("archive/{id}")]
         public async Task<IActionResult> ArchiveUserType(int id, [FromQuery] int userId)
         {

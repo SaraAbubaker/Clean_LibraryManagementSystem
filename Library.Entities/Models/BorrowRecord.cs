@@ -33,7 +33,7 @@ namespace Library.Entities.Models
         {
             if (record.DueDate < record.BorrowDate)
                 return new ValidationResult("Due date cannot be earlier than borrow date.");
-            if (record.BorrowDate > DateOnly.FromDateTime(DateTime.Now))
+            if (record.BorrowDate > DateOnly.FromDateTime(DateTime.UtcNow))
                 return new ValidationResult("Borrow date cannot be in the future.");
             return ValidationResult.Success;
         }

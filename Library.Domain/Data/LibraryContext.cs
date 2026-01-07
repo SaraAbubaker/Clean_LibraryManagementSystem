@@ -53,7 +53,7 @@ namespace Library.Domain.Data
 
             #region Relationships
 
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             // - Book relationships -
             //Book -> Category (many Books have one Category)

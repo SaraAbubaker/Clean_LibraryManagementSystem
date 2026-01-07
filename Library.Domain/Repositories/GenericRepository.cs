@@ -36,9 +36,9 @@ namespace Library.Domain.Repositories
         public async Task AddAsync(T entity, int currentUserId)
         {
             entity.CreatedByUserId = currentUserId;
-            entity.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow);
             entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
             entity.IsArchived = false;
 
             await _dbSet.AddAsync(entity);
@@ -47,7 +47,7 @@ namespace Library.Domain.Repositories
         public async Task UpdateAsync(T entity, int currentUserId)
         {
             entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             _dbSet.Update(entity);
         }
@@ -58,9 +58,9 @@ namespace Library.Domain.Repositories
 
             entity.IsArchived = true;
             entity.ArchivedByUserId = currentUserId;
-            entity.ArchivedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.ArchivedDate = DateOnly.FromDateTime(DateTime.UtcNow);
             entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
 
             _dbSet.Update(entity);

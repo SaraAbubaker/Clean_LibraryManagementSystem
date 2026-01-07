@@ -2,7 +2,6 @@
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Library.UserAPI.Repositories.UserRepo;
-using Library.UserAPI.Repositories.UserTypeRepo;
 using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -14,18 +13,33 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Add DbContext for UserDB
-builder.Services.AddDbContext<UserContext>(options =>
+//ApplicationDbContext extends IdentityDbContext<ApplicationUser, ApplicationRole, int>
+//This wires EF Core + Identity together so you get AspNetUsers, AspNetRoles, etc.
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("UserDB")));
 
-//Add controllers + JSON options
+// Configure Identity with ApplicationUser + ApplicationRole
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
+// Add controllers + JSON options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-//Register Swagger services
+// Swagger setup
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -33,53 +47,53 @@ builder.Services.AddSwaggerGen(c =>
     c.UseInlineDefinitionsForEnums();
 });
 
-//Register repositories
+// Register repositories and services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserTypeRepository, UserTypeRepository>();
-
-//Register services
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IUserTypeService, UserTypeService>();
 
-//Register Password Hasher
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+// Optional: custom password hasher (Identity already provides one internally)
+builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
 
-//Add Authentication + Authorization
+// Authentication + Authorization
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddJwtBearer("LocalJWT", options =>
-    {
-        var jwtKey = builder.Configuration["Jwt:Key"]
-                     ?? throw new InvalidOperationException("Jwt:Key is not configured.");
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)
-            )
-        };
-    })
-
-.AddJwtBearer("AzureAD", options =>
+.AddJwtBearer("LocalJWT", options =>
 {
-    options.Authority = $"https://login.microsoftonline.com/{builder.Configuration["AzureAd:TenantId"]}/v2.0";
-    options.Audience = builder.Configuration["AzureAd:ClientId"];
+    var jwtKey = builder.Configuration["Jwt:Key"]
+                 ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtKey)
+        )
+    };
 });
 
-builder.Services.AddAuthorization();
+// 🔐 Add authorization policies here
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("RequireAdminRole", policy =>
+        policy.RequireRole("Admin"))
+
+    .AddPolicy("RequireManageUserTypes", policy =>
+        policy.RequireClaim("Permission", "ManageUserTypes"))
+
+    .AddPolicy("AdminWithPermission", policy =>
+        policy.RequireRole("Admin")
+              .RequireClaim("Permission", "ManageUserTypes"));
 
 var app = builder.Build();
 
-//Exception handler
+// Exception handler
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -89,7 +103,7 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-//Swagger
+// Swagger in dev
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -99,7 +113,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//Authentication before Authorization
+// Authentication before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

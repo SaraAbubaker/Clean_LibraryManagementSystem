@@ -4,12 +4,10 @@ namespace Library.UserAPI.Repositories.UserRepo
 {
     public interface IUserRepository
     {
-        IQueryable<User> GetAll();
-        IQueryable<User> GetById(int id);
-        Task AddAsync(User entity, int performedByUserId);
-        Task DeactivateAsync(User entity, int performedByUserId);
-        Task ReactivateAsync(User entity, int currentUserId);
-        Task ArchiveAsync(User entity, int currentUserId);
+        IQueryable<ApplicationUser> GetAll();
+        IQueryable<ApplicationUser> GetById(int id);
+        Task AddAsync(ApplicationUser entity, int performedByUserId);
+        Task ArchiveAsync(ApplicationUser entity, int currentUserId);
         Task CommitAsync();
     }
 }

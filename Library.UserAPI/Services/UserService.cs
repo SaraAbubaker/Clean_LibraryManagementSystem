@@ -4,7 +4,6 @@ using Library.Shared.Exceptions;
 using Library.Shared.Helpers;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
-using Library.UserAPI.Repositories.UserRepo;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,25 +16,26 @@ namespace Library.UserAPI.Services
 {
     public class UserService : IUserService
     {
-        private readonly IUserRepository _userRepo;
-        private readonly IUserTypeRepository _userTypeRepo;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IBorrowService _borrowService;
-        private readonly IPasswordHasher<User> _passwordHasher;
         private readonly IConfiguration _config;
 
         public UserService(
-            IUserRepository userRepo,
-            IUserTypeRepository userTypeRepo,
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            RoleManager<ApplicationRole> roleManager,
             IBorrowService borrowService,
-            IPasswordHasher<User> passwordHasher,
             IConfiguration config)
         {
-            _userRepo = userRepo;
-            _userTypeRepo = userTypeRepo;
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _roleManager = roleManager;
             _borrowService = borrowService;
-            _passwordHasher = passwordHasher;
             _config = config;
         }
+
 
         public async Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto)
         {
@@ -44,133 +44,116 @@ namespace Library.UserAPI.Services
             var usernameNormalized = dto.Username.Trim();
             var emailInput = dto.Email.Trim();
 
-            var users = _userRepo.GetAll();
-
-            if (users.Any(u => u.Username.ToLower() == usernameNormalized.ToLower()))
+            if (await _userManager.FindByNameAsync(usernameNormalized) != null)
                 throw new InvalidOperationException("Username already taken.");
 
-            if (users.Any(u => u.Email.ToLower() == emailInput.ToLower()))
+            if (await _userManager.FindByEmailAsync(emailInput) != null)
                 throw new InvalidOperationException("Email already registered.");
 
-            // Normal user type lookup (from UserTypeRepo, not UserRepo)
-            var userType = Validate.Exists(
-                await _userTypeRepo.GetById(-2).FirstOrDefaultAsync(),
-                -2
-            );
+            var user = new ApplicationUser
+            {
+                UserName = usernameNormalized,
+                Email = emailInput,
+                CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                IsArchived = false,
+                LockoutEnabled = false
+            };
 
-            var user = dto.Adapt<User>();
-            user.Username = usernameNormalized;
-            user.Email = emailInput;
-            user.UserTypeId = userType.Id;
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+                throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-            //Hash password before saving
-            user.HashedPassword = _passwordHasher.HashPassword(user, dto.Password);
-            
-            await _userRepo.AddAsync(user, userType.Id);
-            await _userRepo.CommitAsync();
+            // Assign default role "Normal"
+            if (await _roleManager.RoleExistsAsync("Normal"))
+                await _userManager.AddToRoleAsync(user, "Normal");
 
             var outDto = user.Adapt<UserListMessage>();
-            outDto.UserTypeId = user.UserTypeId;
-            outDto.UserRole = userType.Role;
+            outDto.UserRole = "Normal";
 
             return outDto;
         }
 
-        public async Task<UserListMessage> LoginUserAsync(LoginUserMessage dto)
+        public async Task<LoginUserResponseMessage> LoginUserAsync(LoginUserMessage dto)
         {
             Validate.ValidateModel(dto);
 
             var input = dto.UsernameOrEmail.Trim();
             var password = dto.Password.Trim();
 
-            var users = _userRepo.GetAll();
-            var user = users.FirstOrDefault(u =>
-                string.Equals(u.Username, input, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(u.Email, input, StringComparison.OrdinalIgnoreCase)
-            );
+            var result = await _signInManager.PasswordSignInAsync(input, password, isPersistent: false, lockoutOnFailure: true);
+            if (!result.Succeeded)
+                throw new BadRequestException("Invalid username/email or password.");
+
+            var user = await _userManager.FindByNameAsync(input)
+                       ?? await _userManager.FindByEmailAsync(input);
 
             if (user == null)
-                throw new BadRequestException("Invalid username/email or password.");
+                throw new InvalidOperationException("User not found.");
 
-            // Verify hashed password
-            var result = _passwordHasher.VerifyHashedPassword(user, user.HashedPassword, password);
-            if (result == PasswordVerificationResult.Failed)
-                throw new BadRequestException("Invalid username/email or password.");
-
-            // Block archived accounts
             if (user.IsArchived)
                 throw new UnauthorizedAccessException("Archived accounts cannot log in.");
 
-            // Block deactivated accounts
-            if (!user.IsActive)
+            if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
                 throw new UnauthorizedAccessException("Deactivated accounts cannot log in.");
 
-            // Build claims for JWT
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.UserType?.Role ?? "Normal")
-            };
+            var roles = await _userManager.GetRolesAsync(user);
 
-            // Null-safe config lookup
-            var jwtKey = _config["Jwt:Key"]
-                ?? throw new InvalidOperationException("Jwt:Key is not configured.");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(1),
-                signingCredentials: creds
-            );
-
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-            // Borrow count from BorrowService
             var borrowCount = _borrowService.GetBorrowDetailsQuery()
                 .Count(br => br.UserId == user.Id);
 
-            // Map and enrich in one go
-            var dtoOut = user.Adapt<UserListMessage>();
-            dtoOut.UserRole = user.UserType?.Role ?? "Unknown";
-            dtoOut.BorrowedBooksCount = borrowCount;
-            dtoOut.Token = tokenString;
+            var userDto = user.Adapt<UserListMessage>();
+            userDto.UserRole = roles.FirstOrDefault() ?? "Unknown";
 
-            return dtoOut;
+            return new LoginUserResponseMessage
+            {
+                User = userDto,
+                BorrowedBooksCount = borrowCount,
+                LoggedInAt = DateTime.UtcNow
+            };
+        }
+
+        public IQueryable<UserListMessage> GetAllUsersQuery()
+        {
+            return _userManager.Users
+                .AsNoTracking()
+                .Select(u => new UserListMessage
+                {
+                    Id = u.Id,
+                    Username = u.UserName ?? string.Empty,
+                    Email = u.Email ?? string.Empty,
+                    IsArchived = u.IsArchived,
+
+                    LockoutEnabled = u.LockoutEnabled,
+                    LockoutEnd = u.LockoutEnd,
+
+                    Status = u.IsArchived ? "Archived"
+                        : (u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
+                            ? "Deactivated"
+                            : "Active")
+                });
         }
 
         public IQueryable<UserListMessage> GetUserByIdQuery(int id)
         {
             Validate.Positive(id, nameof(id));
 
-            return _userRepo.GetAll()
-                .Include(u => u.UserType)
+            return _userManager.Users
+                .Where(u => u.Id == id)
                 .AsNoTracking()
                 .Select(u => new UserListMessage
                 {
                     Id = u.Id,
-                    Username = u.Username,
-                    Email = u.Email,
-                    UserRole = u.UserType != null ? u.UserType.Role : "Unknown",
-                });
-        }
+                    Username = u.UserName ?? string.Empty,
+                    Email = u.Email ?? string.Empty,
+                    IsArchived = u.IsArchived,
 
-        public IQueryable<UserListMessage> GetAllUsersQuery()
-        {
-            return _userRepo.GetAll()
-                .Include(u => u.UserType)
-                .AsNoTracking()
-                .Select(u => new UserListMessage
-                {
-                    Id = u.Id,
-                    Username = u.Username,
-                    Email = u.Email,
-                    UserRole = u.UserType != null ? u.UserType.Role : "Unknown"
+                    LockoutEnabled = u.LockoutEnabled,
+                    LockoutEnd = u.LockoutEnd,
+
+                    Status = u.IsArchived ? "Archived"
+                        : (u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
+                            ? "Deactivated"
+                            : "Active")
                 });
         }
 
@@ -179,28 +162,24 @@ namespace Library.UserAPI.Services
             Validate.Positive(userId, nameof(userId));
             Validate.NotEmpty(token, nameof(token));
 
-            var user = Validate.Exists(
-                await _userRepo.GetById(userId).FirstOrDefaultAsync(),
-                userId
-            );
-            return new LogoutUserMessage
-            {
-                Id = user.Id,
-                Username = user.Username,
-                LoggedOutAt = DateTime.Now,
-                Status = "Success"
-            };
-        }
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                       ?? throw new InvalidOperationException("User not found.");
 
+            await _signInManager.SignOutAsync();
+
+            var dto = user.Adapt<LogoutUserMessage>();
+            dto.LoggedOutAt = DateTime.UtcNow;
+            dto.Status = "Success";
+
+            return dto;
+        }
         public async Task<UserListMessage> DeactivateUserAsync(int id, int performedByUserId)
         {
             Validate.Positive(id, nameof(id));
             Validate.Positive(performedByUserId, nameof(performedByUserId));
 
-            var user = Validate.Exists(
-                await _userRepo.GetById(id).FirstOrDefaultAsync(),
-                id
-            );
+            var user = await _userManager.FindByIdAsync(id.ToString())
+                       ?? throw new InvalidOperationException("User not found.");
 
             var hasActiveBorrows = _borrowService.GetBorrowDetailsQuery()
                 .Any(br => br.UserId == user.Id && br.ReturnDate == null);
@@ -208,11 +187,19 @@ namespace Library.UserAPI.Services
             if (hasActiveBorrows)
                 throw new InvalidOperationException("User has active borrowed books. Return them before deactivation.");
 
-            await _userRepo.DeactivateAsync(user, performedByUserId);
-            await _userRepo.CommitAsync();
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100);
 
+            user.DeactivatedByUserId = performedByUserId;
+            user.DeactivatedDate = DateTimeOffset.UtcNow;
+            user.LastModifiedByUserId = performedByUserId;
+            user.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            await _userManager.UpdateAsync(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
             var dto = user.Adapt<UserListMessage>();
-            dto.UserRole = user.UserType?.Role ?? "Unknown";
+            dto.UserRole = roles.FirstOrDefault() ?? "Unknown";
 
             return dto;
         }
@@ -222,19 +209,25 @@ namespace Library.UserAPI.Services
             Validate.Positive(id, nameof(id));
             Validate.Positive(performedByUserId, nameof(performedByUserId));
 
-            var user = Validate.Exists(
-                await _userRepo.GetById(id).FirstOrDefaultAsync(),
-                id
-            );
+            var user = await _userManager.FindByIdAsync(id.ToString())
+                       ?? throw new InvalidOperationException("User not found.");
 
             if (user.IsArchived)
                 throw new InvalidOperationException("Archived users cannot be reactivated.");
 
-            await _userRepo.ReactivateAsync(user, performedByUserId);
-            await _userRepo.CommitAsync();
+            user.LockoutEnd = null;
+            user.LockoutEnabled = false;
 
+            user.DeactivatedByUserId = null;
+            user.DeactivatedDate = null;
+            user.LastModifiedByUserId = performedByUserId;
+            user.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            await _userManager.UpdateAsync(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
             var dto = user.Adapt<UserListMessage>();
-            dto.UserRole = user.UserType?.Role ?? "Unknown";
+            dto.UserRole = roles.FirstOrDefault() ?? "Unknown";
 
             return dto;
         }
@@ -244,16 +237,20 @@ namespace Library.UserAPI.Services
             Validate.Positive(id, nameof(id));
             Validate.Positive(performedByUserId, nameof(performedByUserId));
 
-            var user = Validate.Exists(
-                await _userRepo.GetById(id).FirstOrDefaultAsync(),
-                id
-            );
+            var user = await _userManager.FindByIdAsync(id.ToString())
+                       ?? throw new InvalidOperationException("User not found.");
 
-            await _userRepo.ArchiveAsync(user, performedByUserId);
-            await _userRepo.CommitAsync();
+            user.IsArchived = true;
+            user.ArchivedByUserId = performedByUserId;
+            user.ArchivedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            user.LastModifiedByUserId = performedByUserId;
+            user.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
+            await _userManager.UpdateAsync(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
             var dto = user.Adapt<UserListMessage>();
-            dto.UserRole = user.UserType?.Role ?? "Unknown";
+            dto.UserRole = roles.FirstOrDefault() ?? "Unknown";
 
             return dto;
         }

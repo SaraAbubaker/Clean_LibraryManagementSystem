@@ -54,7 +54,7 @@ namespace Library.API.Middleware
                 var exceptionDto = new ExceptionLogMessage
                 {
                     Guid = Guid.NewGuid(),
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     Level = MyLogLevel.Exception,
                     ServiceName = serviceName,
                     Request = requestSummary + " " + requestBody,
@@ -93,7 +93,7 @@ namespace Library.API.Middleware
                         var messageDto = new MessageLogMessage
                         {
                             Guid = Guid.NewGuid(),
-                            CreatedAt = DateTime.Now,
+                            CreatedAt = DateTime.UtcNow,
                             Level = MyLogLevel.Info,
                             ServiceName = serviceName,
                             Request = requestSummary + " " + requestBody,
@@ -125,7 +125,7 @@ namespace Library.API.Middleware
                         var failedDto = new FailedLogMessage
                         {
                             Guid = Guid.NewGuid(),
-                            CreatedAt = DateTime.Now,
+                            CreatedAt = DateTime.UtcNow,
                             Level = MyLogLevel.Failed.ToString(),
                             ServiceName = serviceName,
                             OriginalMessage = requestSummary + " " + requestBody,
@@ -155,7 +155,7 @@ namespace Library.API.Middleware
             var warningDto = new WarningLogMessage
             {
                 Guid = Guid.NewGuid(),
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
                 Level = MyLogLevel.Warning,
                 ServiceName = serviceName,
                 Request = requestSummary + " " + requestBody,

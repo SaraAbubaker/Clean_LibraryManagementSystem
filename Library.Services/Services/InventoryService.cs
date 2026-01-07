@@ -52,9 +52,9 @@ namespace Library.Services.Services
                 IsAvailable = true,
                 PublisherId = book.PublisherId,
                 CreatedByUserId = createdByUserId,
-                CreatedDate = DateOnly.FromDateTime(DateTime.Now),
+                CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 LastModifiedByUserId = createdByUserId,
-                LastModifiedDate = DateOnly.FromDateTime(DateTime.Now),
+                LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 IsArchived = false
             };
 

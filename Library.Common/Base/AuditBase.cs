@@ -13,7 +13,7 @@ namespace Library.Common.Base
         public int? CreatedByUserId { get; set; } //nullable
 
         [Required]
-        public DateOnly CreatedDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public DateOnly CreatedDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
         [Range(1, int.MaxValue, ErrorMessage = "LastModifiedByUserId must be positive.")]
         public int? LastModifiedByUserId { get; set; } //nullable

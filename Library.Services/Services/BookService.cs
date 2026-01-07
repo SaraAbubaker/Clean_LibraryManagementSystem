@@ -41,9 +41,9 @@ namespace Library.Services.Services
                 IsAvailable = true,
                 PublisherId = book.PublisherId > 0 ? book.PublisherId : 0,
                 CreatedByUserId = currentUserId,
-                CreatedDate = DateOnly.FromDateTime(DateTime.Now),
+                CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 LastModifiedByUserId = currentUserId,
-                LastModifiedDate = DateOnly.FromDateTime(DateTime.Now),
+                LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 IsArchived = false
             };
 

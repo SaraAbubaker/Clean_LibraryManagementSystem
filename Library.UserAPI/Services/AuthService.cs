@@ -44,7 +44,7 @@ namespace Library.UserAPI.Services
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(expiresInMinutes),
+                expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
                 signingCredentials: creds);
 
             // Return serialized token

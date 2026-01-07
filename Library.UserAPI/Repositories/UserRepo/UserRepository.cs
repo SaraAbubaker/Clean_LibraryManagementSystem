@@ -7,86 +7,54 @@ namespace Library.UserAPI.Repositories.UserRepo
 {
     public class UserRepository : IUserRepository
     {
-        private readonly UserContext _context;
-        private readonly DbSet<User> _users;
+        private readonly ApplicationDbContext _context;
+        private readonly DbSet<ApplicationUser> _users;
 
-        public UserRepository(UserContext context)
+        public UserRepository(ApplicationDbContext context)
         {
             _context = context;
             _users = _context.Users;
         }
 
-        public IQueryable<User> GetAll()
+        public IQueryable<ApplicationUser> GetAll()
         {
-            IQueryable<User> query = _users.AsQueryable();
-
-            if (typeof(IArchivable).IsAssignableFrom(typeof(User)))
-            {
-                query = query.Where(e => !e.IsArchived);
-            }
-
-            return query;
+            // Only return non-archived users
+            return _users.Where(u => !u.IsArchived);
         }
 
-        public IQueryable<User> GetById(int id)
+        public IQueryable<ApplicationUser> GetById(int id)
         {
-            return _users.Where(e => e.Id == id);
+            return _users.Where(u => u.Id == id);
         }
 
-        public async Task AddAsync(User entity, int currentUserId)
+        public async Task AddAsync(ApplicationUser entity, int currentUserId)
         {
             entity.CreatedByUserId = currentUserId;
-            entity.CreatedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow);
             entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
             entity.IsArchived = false;
 
             await _users.AddAsync(entity);
         }
 
-        public async Task UpdateAsync(User entity, int currentUserId)
+        public async Task UpdateAsync(ApplicationUser entity, int currentUserId)
         {
             entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             _users.Update(entity);
         }
 
-        public async Task DeactivateAsync(User entity, int currentUserId)
-        {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
-
-            entity.IsActive = false;
-            entity.DeactivatedByUserId = currentUserId;
-            entity.DeactivatedDate = DateOnly.FromDateTime(DateTime.Now);
-            entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
-
-            _users.Update(entity);
-        }
-
-        public async Task ReactivateAsync(User entity, int currentUserId)
-        {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
-
-            entity.IsActive = true;
-            entity.DeactivatedByUserId = null;
-            entity.DeactivatedDate = null;
-            entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
-
-            _users.Update(entity);
-        }
-
-        public async Task ArchiveAsync(User entity, int currentUserId)
+        public async Task ArchiveAsync(ApplicationUser entity, int currentUserId)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             entity.IsArchived = true;
             entity.ArchivedByUserId = currentUserId;
-            entity.ArchivedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.ArchivedDate = DateOnly.FromDateTime(DateTime.UtcNow);
             entity.LastModifiedByUserId = currentUserId;
-            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.Now);
+            entity.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             _users.Update(entity);
         }

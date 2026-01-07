@@ -3,17 +3,18 @@ using Library.Shared.Helpers;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Mapster;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.UserAPI.Services
 {
     public class UserTypeService : IUserTypeService
     {
-        private readonly IUserTypeRepository _userTypeRepo;
+        private readonly RoleManager<ApplicationRole> _roleManager;
 
-        public UserTypeService(IUserTypeRepository userTypeRepo)
+        public UserTypeService(RoleManager<ApplicationRole> roleManager)
         {
-            _userTypeRepo = userTypeRepo;
+            _roleManager = roleManager;
         }
 
         public async Task<UserTypeListMessage> CreateUserTypeAsync(CreateUserTypeMessage dto, int createdByUserId)
@@ -21,29 +22,39 @@ namespace Library.UserAPI.Services
             Validate.ValidateModel(dto);
             Validate.Positive(createdByUserId, nameof(createdByUserId));
 
-            var existingAdmin = await _userTypeRepo.GetAll()
-                .FirstOrDefaultAsync(ut => ut.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+            var existingAdmin = await _roleManager.Roles
+                .FirstOrDefaultAsync(r => r.Name!.Equals("Admin", StringComparison.OrdinalIgnoreCase));
 
+            //Prevents duplication
             Validate.NotNull(
                 dto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && existingAdmin != null ? null : new object(),
                 "The Admin role already exists and cannot be duplicated."
             );
 
-            var userType = dto.Adapt<UserType>();
-            await _userTypeRepo.AddAsync(userType, createdByUserId);
-            await _userTypeRepo.CommitAsync();
+            var role = new ApplicationRole
+            {
+                Name = dto.Role,
+                CreatedByUserId = createdByUserId,
+                CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                LastModifiedByUserId = createdByUserId,
+                LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow)
+            };
 
-            return userType.Adapt<UserTypeListMessage>();
+            var result = await _roleManager.CreateAsync(role);
+            if (!result.Succeeded)
+                throw new InvalidOperationException($"Failed to create role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+
+            return role.Adapt<UserTypeListMessage>();
         }
 
         public IQueryable<UserTypeListMessage> GetAllUserTypesQuery()
         {
-            return _userTypeRepo.GetAll()
+            return _roleManager.Roles
                 .AsNoTracking()
-                .Select(ut => new UserTypeListMessage
+                .Select(r => new UserTypeListMessage
                 {
-                    Id = ut.Id,
-                    Role = ut.Role
+                    Id = r.Id,
+                    Role = r.Name ?? string.Empty
                 });
         }
 
@@ -51,12 +62,13 @@ namespace Library.UserAPI.Services
         {
             Validate.Positive(id, nameof(id));
 
-            return _userTypeRepo.GetById(id)
+            return _roleManager.Roles
+                .Where(r => r.Id == id)
                 .AsNoTracking()
-                .Select(ut => new UserTypeListMessage
+                .Select(r => new UserTypeListMessage
                 {
-                    Id = ut.Id,
-                    Role = ut.Role
+                    Id = r.Id,
+                    Role = r.Name ?? string.Empty
                 });
         }
 
@@ -66,24 +78,26 @@ namespace Library.UserAPI.Services
             Validate.Positive(userTypeId, nameof(userTypeId));
             Validate.Positive(userId, nameof(userId));
 
-            var userType = Validate.Exists(
-                await _userTypeRepo.GetById(userTypeId).FirstOrDefaultAsync(),
-                userTypeId
-            );
+            var role = await _roleManager.Roles.FirstOrDefaultAsync(r => r.Id == userTypeId)
+                ?? throw new KeyNotFoundException($"Role {userTypeId} not found.");
 
             // Prevent renaming Admin role
             Validate.NotEmpty(dto.Role, nameof(dto.Role));
-            if (userType.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) &&
+            if (role.Name!.Equals("Admin", StringComparison.OrdinalIgnoreCase) &&
                 !dto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("The Admin role cannot be renamed or downgraded.");
             }
 
-            userType.Role = dto.Role;
-            await _userTypeRepo.UpdateAsync(userType, userId);
-            await _userTypeRepo.CommitAsync();
+            role.Name = dto.Role;
+            role.LastModifiedByUserId = userId;
+            role.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            return userType.Adapt<UserTypeListMessage>();
+            var result = await _roleManager.UpdateAsync(role);
+            if (!result.Succeeded)
+                throw new InvalidOperationException($"Failed to update role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+
+            return role.Adapt<UserTypeListMessage>();
         }
 
         public async Task<bool> ArchiveUserTypeAsync(int id, int archivedByUserId)
@@ -91,19 +105,24 @@ namespace Library.UserAPI.Services
             Validate.Positive(id, nameof(id));
             Validate.Positive(archivedByUserId, nameof(archivedByUserId));
 
-            var userType = Validate.Exists(
-                await _userTypeRepo.GetById(id).FirstOrDefaultAsync(),
-                id
-            );
+            var role = await _roleManager.Roles.FirstOrDefaultAsync(r => r.Id == id)
+                ?? throw new KeyNotFoundException($"Role {id} not found.");
 
             // Prevent archiving Admin role
             Validate.NotNull(
-                userType.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) ? null : new object(),
+                role.Name!.Equals("Admin", StringComparison.OrdinalIgnoreCase) ? null : new object(),
                 "The Admin role cannot be archived."
             );
 
-            await _userTypeRepo.ArchiveAsync(userType, archivedByUserId);
-            await _userTypeRepo.CommitAsync();
+            role.IsArchived = true;
+            role.ArchivedByUserId = archivedByUserId;
+            role.ArchivedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            role.LastModifiedByUserId = archivedByUserId;
+            role.LastModifiedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var result = await _roleManager.UpdateAsync(role);
+            if (!result.Succeeded)
+                throw new InvalidOperationException($"Failed to archive role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
             return true;
         }

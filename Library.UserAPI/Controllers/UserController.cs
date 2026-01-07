@@ -48,14 +48,43 @@ namespace Library.UserAPI.Controllers
         {
             try
             {
-                var user = await _service.LoginUserAsync(dto);
-                if (user == null)
+                var loginResult = await _service.LoginUserAsync(dto);
+                if (loginResult == null)
                     return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>("Invalid credentials"));
 
-                // Use UserRole from your DTO
-                var token = _authService.GenerateJwtToken(user);
+                // Build claims from loginResult.User
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, loginResult.User.Id.ToString()),
+                    new Claim(ClaimTypes.Name, loginResult.User.Username),
+                    new Claim(ClaimTypes.Email, loginResult.User.Email),
+                    new Claim(ClaimTypes.Role, loginResult.User.UserRole)
+                };
 
-                return Ok(ApiResponseHelper.Success(new { token }));
+                var jwtKey = _config["Jwt:Key"]
+                    ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+                var expiresInMinutes = int.Parse(_config["Jwt:ExpiresInMinutes"] ?? "60");
+
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                var token = new JwtSecurityToken(
+                    issuer: _config["Jwt:Issuer"],
+                    audience: _config["Jwt:Audience"],
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
+                    signingCredentials: creds
+                );
+
+                var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+                return Ok(ApiResponseHelper.Success(new
+                {
+                    token = tokenString,
+                    loggedInAt = loginResult.LoggedInAt,
+                    role = loginResult.User.UserRole,
+                    borrowCount = loginResult.BorrowedBooksCount
+                }));
             }
             catch (Exception ex)
             {
@@ -63,7 +92,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(AuthenticationSchemes = "LocalJWT")]
         [HttpGet("query")]
         public IActionResult GetAllUsersQuery()
         {
@@ -78,7 +107,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(AuthenticationSchemes = "LocalJWT")]
         [HttpGet("query/{id}")]
         public IActionResult GetUserByIdQuery(int id)
         {
@@ -97,7 +126,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(AuthenticationSchemes = "LocalJWT")]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromQuery] int userId, [FromBody] string token)
         {
@@ -120,9 +149,8 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // Only Admins can archive users
         // Only Admins can deactivate users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}/deactivate")]
         public async Task<IActionResult> DeactivateUser(int id, [FromQuery] int performedByUserId)
         {
@@ -146,7 +174,7 @@ namespace Library.UserAPI.Controllers
         }
 
         // Only Admins can reactivate users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}/reactivate")]
         public async Task<IActionResult> ReactivateUser(int id, [FromQuery] int performedByUserId)
         {
@@ -170,7 +198,7 @@ namespace Library.UserAPI.Controllers
         }
 
         // Only Admins can archive users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT,AzureAD")]
+        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}/archive")]
         public async Task<IActionResult> ArchiveUser(int id, [FromQuery] int performedByUserId)
         {

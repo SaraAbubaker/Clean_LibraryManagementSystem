@@ -118,7 +118,7 @@ app.UseExceptionHandler(errorApp =>
             var exceptionDto = new ExceptionLogMessage
             {
                 Guid = Guid.NewGuid(),
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
                 Level = MyLogLevel.Exception,
                 ServiceName = $"{context.Request.Method} {context.Request.Path}",
                 Request = $"{context.Request.Method} {context.Request.Path}",
