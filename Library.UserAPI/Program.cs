@@ -1,4 +1,7 @@
-﻿using Library.UserAPI.Data;
+﻿using Library.Domain.Repositories;
+using Library.Services.Interfaces;
+using Library.Services.Services;
+using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Library.UserAPI.Repositories.UserRepo;
@@ -48,8 +51,10 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Register repositories and services
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>)); //any service needing IGenericRepository<T> can be constructed.
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IBorrowService, BorrowService>();
 
 // Optional: custom password hasher (Identity already provides one internally)
 builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
