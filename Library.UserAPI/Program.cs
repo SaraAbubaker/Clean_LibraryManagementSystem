@@ -1,4 +1,5 @@
-﻿using Library.Domain.Repositories;
+﻿using Library.Domain.Data;
+using Library.Domain.Repositories;
 using Library.Services.Interfaces;
 using Library.Services.Services;
 using Library.UserAPI.Data;
@@ -14,19 +15,22 @@ using Microsoft.OpenApi;
 using System.Text;
 using System.Text.Json.Serialization;
 
-
-
-//test commit
-
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 //ApplicationDbContext extends IdentityDbContext<ApplicationUser, ApplicationRole, int>
 //This wires EF Core + Identity together so you get AspNetUsers, AspNetRoles, etc.
 
+var connectionString = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(
+    builder.Configuration.GetConnectionString("DefaultConnection"))
+{
+    Encrypt = false,
+    TrustServerCertificate = true
+}.ConnectionString;
+
+//Update-Database -Connection "Server=(localdb)\ProjectModels;Database=UserDB;Trusted_Connection=True;Encrypt=False;TrustServerCertificate=True"
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("UserDB")));
+    options.UseSqlServer(connectionString));
 
 // Configure Identity with ApplicationUser + ApplicationRole
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -57,12 +61,10 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Register repositories and services
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>)); //any service needing IGenericRepository<T> can be constructed.
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IBorrowService, BorrowService>();
 
-// Optional: custom password hasher (Identity already provides one internally)
+// Optional: custom password hasher
 builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
 
 // Authentication + Authorization
@@ -94,15 +96,49 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdminRole", policy =>
         policy.RequireRole("Admin"))
-
     .AddPolicy("RequireManageUserTypes", policy =>
         policy.RequireClaim("Permission", "ManageUserTypes"))
-
     .AddPolicy("AdminWithPermission", policy =>
         policy.RequireRole("Admin")
               .RequireClaim("Permission", "ManageUserTypes"));
 
 var app = builder.Build();
+
+// --- Runtime seeding block ---
+using (var scope = app.Services.CreateScope())
+{
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+
+    // Ensure Admin role exists
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        await roleManager.CreateAsync(new ApplicationRole { Name = "Admin", NormalizedName = "ADMIN" });
+    }
+
+    // Ensure Normal role exists
+    if (!await roleManager.RoleExistsAsync("Normal"))
+    {
+        await roleManager.CreateAsync(new ApplicationRole { Name = "Normal", NormalizedName = "NORMAL" });
+    }
+
+    // Ensure Admin user exists
+    var adminUser = await userManager.FindByNameAsync("admin");
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser
+        {
+            UserName = "admin",
+            Email = "admin@library.local",
+            EmailConfirmed = true,
+            CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            IsArchived = false,
+            SecurityStamp = Guid.NewGuid().ToString("D")
+        };
+        await userManager.CreateAsync(adminUser, "Admin@123");
+        await userManager.AddToRoleAsync(adminUser, "Admin");
+    }
+}
 
 // Exception handler
 app.UseExceptionHandler(errorApp =>
