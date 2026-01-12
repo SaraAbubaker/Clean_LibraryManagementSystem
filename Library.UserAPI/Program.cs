@@ -1,7 +1,4 @@
-﻿using Library.Domain.Data;
-using Library.Domain.Repositories;
-using Library.Services.Interfaces;
-using Library.Services.Services;
+﻿
 using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
@@ -63,6 +60,7 @@ builder.Services.AddSwaggerGen(c =>
 // Register repositories and services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Optional: custom password hasher
 builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();

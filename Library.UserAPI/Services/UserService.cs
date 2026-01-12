@@ -1,5 +1,4 @@
 ﻿using Library.Common.RabbitMqMessages.UserMessages;
-using Library.Services.Interfaces;
 using Library.Shared.Exceptions;
 using Library.Shared.Helpers;
 using Library.UserAPI.Interfaces;
@@ -7,10 +6,6 @@ using Library.UserAPI.Models;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Library.UserAPI.Services
 {
@@ -19,23 +14,22 @@ namespace Library.UserAPI.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
-        private readonly IBorrowService _borrowService;
         private readonly IConfiguration _config;
+        private readonly IAuthService _authService;
 
         public UserService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
-            IBorrowService borrowService,
-            IConfiguration config)
+            IConfiguration config,
+            IAuthService authService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
-            _borrowService = borrowService;
             _config = config;
+            _authService = authService;
         }
-
 
         public async Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto)
         {
@@ -63,7 +57,6 @@ namespace Library.UserAPI.Services
             if (!result.Succeeded)
                 throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-            // Assign default role "Normal"
             if (await _roleManager.RoleExistsAsync("Normal"))
                 await _userManager.AddToRoleAsync(user, "Normal");
 
@@ -98,17 +91,21 @@ namespace Library.UserAPI.Services
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            var borrowCount = _borrowService.GetBorrowDetailsQuery()
-                .Count(br => br.UserId == user.Id);
-
             var userDto = user.Adapt<UserListMessage>();
             userDto.UserRole = roles.FirstOrDefault() ?? "Unknown";
+
+            // Generate tokens
+            var accessToken = _authService.GenerateJwtToken(userDto);
+            var refreshToken = _authService.GenerateRefreshToken();
+
+            // TODO: Persist refreshToken in DB with user.Id + expiry
 
             return new LoginUserResponseMessage
             {
                 User = userDto,
-                BorrowedBooksCount = borrowCount,
-                LoggedInAt = DateTime.UtcNow
+                LoggedInAt = DateTime.UtcNow,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
             };
         }
 
@@ -122,10 +119,8 @@ namespace Library.UserAPI.Services
                     Username = u.UserName ?? string.Empty,
                     Email = u.Email ?? string.Empty,
                     IsArchived = u.IsArchived,
-
                     LockoutEnabled = u.LockoutEnabled,
                     LockoutEnd = u.LockoutEnd,
-
                     Status = u.IsArchived ? "Archived"
                         : (u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
                             ? "Deactivated"
@@ -146,10 +141,8 @@ namespace Library.UserAPI.Services
                     Username = u.UserName ?? string.Empty,
                     Email = u.Email ?? string.Empty,
                     IsArchived = u.IsArchived,
-
                     LockoutEnabled = u.LockoutEnabled,
                     LockoutEnd = u.LockoutEnd,
-
                     Status = u.IsArchived ? "Archived"
                         : (u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
                             ? "Deactivated"
@@ -173,6 +166,7 @@ namespace Library.UserAPI.Services
 
             return dto;
         }
+
         public async Task<UserListMessage> DeactivateUserAsync(int id, int performedByUserId)
         {
             Validate.Positive(id, nameof(id));
@@ -180,12 +174,6 @@ namespace Library.UserAPI.Services
 
             var user = await _userManager.FindByIdAsync(id.ToString())
                        ?? throw new InvalidOperationException("User not found.");
-
-            var hasActiveBorrows = _borrowService.GetBorrowDetailsQuery()
-                .Any(br => br.UserId == user.Id && br.ReturnDate == null);
-
-            if (hasActiveBorrows)
-                throw new InvalidOperationException("User has active borrowed books. Return them before deactivation.");
 
             user.LockoutEnabled = true;
             user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100);

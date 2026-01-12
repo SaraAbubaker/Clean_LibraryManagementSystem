@@ -1,5 +1,4 @@
-﻿
-namespace Library.Common.RabbitMqMessages.UserMessages
+﻿namespace Library.Common.RabbitMqMessages.UserMessages
 {
     public class LogoutUserMessage
     {

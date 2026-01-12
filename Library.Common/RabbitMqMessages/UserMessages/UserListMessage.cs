@@ -1,5 +1,4 @@
-﻿
-namespace Library.Common.RabbitMqMessages.UserMessages
+﻿namespace Library.Common.RabbitMqMessages.UserMessages
 {
     public class UserListMessage
     {
@@ -9,8 +8,6 @@ namespace Library.Common.RabbitMqMessages.UserMessages
 
         public int UserTypeId { get; set; }
         public string UserRole { get; set; } = null!;
-
-        public int BorrowedBooksCount { get; set; }
 
         public string Token { get; set; } = null!;
         public bool IsArchived { get; set; } = false;

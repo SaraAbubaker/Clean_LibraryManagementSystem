@@ -82,8 +82,7 @@ namespace Library.UserAPI.Controllers
                 {
                     token = tokenString,
                     loggedInAt = loginResult.LoggedInAt,
-                    role = loginResult.User.UserRole,
-                    borrowCount = loginResult.BorrowedBooksCount
+                    role = loginResult.User.UserRole
                 }));
             }
             catch (Exception ex)

@@ -6,9 +6,6 @@ namespace Library.UserAPI.Models
 {
     public class ApplicationUser : IdentityUser<int>, IArchivable
     {
-        [Range(0, int.MaxValue, ErrorMessage = "BorrowCount must be non-negative.")]
-        public int BorrowCount { get; set; }
-
         public int? CreatedByUserId { get; set; }
         [Required]
         public DateOnly CreatedDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -31,5 +28,8 @@ namespace Library.UserAPI.Models
                 : (LockoutEnd.HasValue && LockoutEnd > DateTimeOffset.UtcNow
                     ? "Deactivated"
                     : "Active");
+
+        //navigation property for refresh tokens
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

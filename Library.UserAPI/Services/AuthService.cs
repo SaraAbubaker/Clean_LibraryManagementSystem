@@ -3,6 +3,7 @@ using Library.UserAPI.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Library.UserAPI.Services
@@ -27,11 +28,11 @@ namespace Library.UserAPI.Services
                 ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
             var expiresInMinutes = _config.GetValue<int>("Jwt:ExpiresInMinutes", 60);
 
-            // Create signing credentials
+            //Create signing credentials
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // Define claims
+            //Define claims
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Username),
@@ -39,7 +40,7 @@ namespace Library.UserAPI.Services
                 new Claim(ClaimTypes.Role, user.UserRole)
             };
 
-            // Build token
+            //Build token
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
@@ -47,8 +48,23 @@ namespace Library.UserAPI.Services
                 expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
                 signingCredentials: creds);
 
-            // Return serialized token
+            //Return serialized token
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        //Generate a secure refresh token
+        public string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
+        }
+
+        public int GetRefreshTokenLifetimeDays()
+        {
+            return _config.GetValue<int>("Jwt:RefreshTokenDays", 7);
+        }
+
     }
 }
