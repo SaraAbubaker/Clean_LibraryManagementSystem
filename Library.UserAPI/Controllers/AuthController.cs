@@ -3,6 +3,7 @@ using Library.Common.RabbitMqMessages.UserMessages;
 using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
+using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,57 +25,13 @@ namespace Library.UserAPI.Controllers
             _userManager = userManager;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginUserMessage request)
-        {
-            // Find user by username or email
-            var user = await _userManager.Users
-                .FirstOrDefaultAsync(u => u.UserName == request.UsernameOrEmail || u.Email == request.UsernameOrEmail);
-
-            if (user == null)
-                return Unauthorized("Invalid credentials");
-
-            // Verify password using UserManager (hash check)
-            var validPassword = await _userManager.CheckPasswordAsync(user, request.Password);
-            if (!validPassword)
-                return Unauthorized("Invalid credentials");
-
-            // Get roles
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault() ?? "User";
-
-            var userMessage = new UserListMessage
-            {
-                Id = user.Id,
-                Username = user.UserName ?? string.Empty,
-                UserRole = role
-            };
-
-            var jwtToken = _authService.GenerateJwtToken(userMessage);
-            var refreshToken = _authService.GenerateRefreshToken();
-
-            _context.RefreshTokens.Add(new RefreshToken
-            {
-                UserId = user.Id,
-                Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(_authService.GetRefreshTokenLifetimeDays()),
-                IsRevoked = false
-            });
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                token = jwtToken,
-                refreshToken = refreshToken
-            });
-        }
-
-
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
+            var hashedInput = _authService.HashToken(request.RefreshToken);
+
             var storedToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
+                .FirstOrDefaultAsync(rt => rt.Token == hashedInput);
 
             if (storedToken == null || storedToken.IsRevoked || storedToken.ExpiresAt < DateTime.UtcNow)
                 return Unauthorized("Invalid or expired refresh token");
@@ -83,18 +40,32 @@ namespace Library.UserAPI.Controllers
             if (user == null)
                 return Unauthorized("User not found");
 
+            if (user.IsArchived)
+                return Unauthorized("Archived accounts cannot refresh tokens.");
+
+            if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
+                return Unauthorized("Deactivated accounts cannot refresh tokens.");
+
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault() ?? "User";
 
-            var userMessage = new UserListMessage
+            // Build response DTO directly (flattened)
+            var newRefreshToken = _authService.GenerateRefreshToken();
+            var response = new LoginUserResponseMessage
             {
                 Id = user.Id,
                 Username = user.UserName ?? string.Empty,
-                UserRole = role
+                Email = user.Email ?? string.Empty,
+                UserRole = role,
+                LoggedInAt = DateTime.UtcNow,
+                RefreshToken = newRefreshToken
             };
 
-            var newJwt = _authService.GenerateJwtToken(userMessage);
-            var newRefresh = _authService.GenerateRefreshToken();
+            // Generate JWT using the flattened DTO
+            response.AccessToken = _authService.GenerateJwtToken(response);
+
+            // Hash and persist new refresh token
+            var hashedNewRefresh = _authService.HashToken(newRefreshToken);
 
             // revoke old token
             storedToken.IsRevoked = true;
@@ -103,26 +74,23 @@ namespace Library.UserAPI.Controllers
             _context.RefreshTokens.Add(new RefreshToken
             {
                 UserId = user.Id,
-                Token = newRefresh,
+                Token = hashedNewRefresh,
                 ExpiresAt = DateTime.UtcNow.AddDays(_authService.GetRefreshTokenLifetimeDays()),
                 IsRevoked = false
             });
 
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                token = newJwt,
-                refreshToken = newRefresh
-            });
+            return Ok(response);
         }
-
 
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequest request)
         {
+            var hashedInput = _authService.HashToken(request.RefreshToken);
+
             var storedToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
+                .FirstOrDefaultAsync(rt => rt.Token == hashedInput);
 
             if (storedToken == null)
                 return NotFound("Refresh token not found");

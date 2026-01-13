@@ -1,6 +1,7 @@
 ﻿using Library.Common.RabbitMqMessages.UserMessages;
 using Library.Shared.Exceptions;
 using Library.Shared.Helpers;
+using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Mapster;
@@ -14,6 +15,7 @@ namespace Library.UserAPI.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
         private readonly IAuthService _authService;
 
@@ -22,13 +24,15 @@ namespace Library.UserAPI.Services
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             IConfiguration config,
-            IAuthService authService)
+            IAuthService authService,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _config = config;
             _authService = authService;
+            _context = context;
         }
 
         public async Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto)
@@ -73,10 +77,14 @@ namespace Library.UserAPI.Services
             var input = dto.UsernameOrEmail.Trim();
             var password = dto.Password.Trim();
 
-            var result = await _signInManager.PasswordSignInAsync(input, password, isPersistent: false, lockoutOnFailure: true);
+            // Attempt sign-in
+            var result = await _signInManager.PasswordSignInAsync(
+                input, password, isPersistent: false, lockoutOnFailure: true);
+
             if (!result.Succeeded)
                 throw new BadRequestException("Invalid username/email or password.");
 
+            // Find user by username or email
             var user = await _userManager.FindByNameAsync(input)
                        ?? await _userManager.FindByEmailAsync(input);
 
@@ -89,24 +97,40 @@ namespace Library.UserAPI.Services
             if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
                 throw new UnauthorizedAccessException("Deactivated accounts cannot log in.");
 
+            // Get roles
             var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? "Unknown";
 
-            var userDto = user.Adapt<UserListMessage>();
-            userDto.UserRole = roles.FirstOrDefault() ?? "Unknown";
-
-            // Generate tokens
-            var accessToken = _authService.GenerateJwtToken(userDto);
+            // Generate refresh token
             var refreshToken = _authService.GenerateRefreshToken();
+            var hashedRefresh = _authService.HashToken(refreshToken);
 
-            // TODO: Persist refreshToken in DB with user.Id + expiry
-
-            return new LoginUserResponseMessage
+            // Persist refresh token securely
+            var refreshEntity = new RefreshToken
             {
-                User = userDto,
+                UserId = user.Id,
+                Token = hashedRefresh,
+                ExpiresAt = DateTime.UtcNow.AddDays(_authService.GetRefreshTokenLifetimeDays()),
+                IsRevoked = false
+            };
+            _context.RefreshTokens.Add(refreshEntity);
+            await _context.SaveChangesAsync();
+
+            // Build response DTO directly (flattened)
+            var response = new LoginUserResponseMessage
+            {
+                Id = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                UserRole = role,
                 LoggedInAt = DateTime.UtcNow,
-                AccessToken = accessToken,
                 RefreshToken = refreshToken
             };
+
+            // Generate JWT using the flattened DTO
+            response.AccessToken = _authService.GenerateJwtToken(response);
+
+            return response;
         }
 
         public IQueryable<UserListMessage> GetAllUsersQuery()

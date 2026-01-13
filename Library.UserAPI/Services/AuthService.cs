@@ -17,7 +17,7 @@ namespace Library.UserAPI.Services
             _config = config;
         }
 
-        public string GenerateJwtToken(UserListMessage user)
+        public string GenerateJwtToken(LoginUserResponseMessage loginResponse)
         {
             // Read JWT settings from configuration
             var jwtKey = _config["Jwt:Key"]
@@ -28,19 +28,21 @@ namespace Library.UserAPI.Services
                 ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
             var expiresInMinutes = _config.GetValue<int>("Jwt:ExpiresInMinutes", 60);
 
-            //Create signing credentials
+            // Create signing credentials
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            //Define claims
-            var claims = new[]
+            // Define claims using flattened DTO properties
+            var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-                new Claim("userId", user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.UserRole)
+                new Claim(JwtRegisteredClaimNames.Sub, loginResponse.Username ?? string.Empty),
+                new Claim("userId", loginResponse.Id.ToString()),
+                new Claim(ClaimTypes.Role, loginResponse.UserRole ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Email, loginResponse.Email ?? string.Empty),
+                new Claim("loggedInAt", loginResponse.LoggedInAt.ToString("O")) // ISO 8601 format
             };
 
-            //Build token
+            // Build token
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
@@ -48,7 +50,7 @@ namespace Library.UserAPI.Services
                 expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
                 signingCredentials: creds);
 
-            //Return serialized token
+            // Return serialized token
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
@@ -66,5 +68,11 @@ namespace Library.UserAPI.Services
             return _config.GetValue<int>("Jwt:RefreshTokenDays", 7);
         }
 
+        public string HashToken(string token)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
+        }
     }
 }

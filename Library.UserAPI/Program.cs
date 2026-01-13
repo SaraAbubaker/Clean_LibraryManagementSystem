@@ -46,7 +46,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
     });
 
 // Swagger setup
@@ -90,7 +90,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 🔐 Add authorization policies here
+//Add authorization policies here
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdminRole", policy =>
         policy.RequireRole("Admin"))

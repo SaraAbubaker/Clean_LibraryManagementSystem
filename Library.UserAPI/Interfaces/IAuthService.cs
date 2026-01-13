@@ -4,8 +4,9 @@ namespace Library.UserAPI.Interfaces
 {
     public interface IAuthService
     {
-        string GenerateJwtToken(UserListMessage user);
+        string GenerateJwtToken(LoginUserResponseMessage loginResponse);
         string GenerateRefreshToken();
         int GetRefreshTokenLifetimeDays();
+        string HashToken(string refreshToken);
     }
 }

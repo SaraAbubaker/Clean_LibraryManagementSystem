@@ -1,6 +1,7 @@
 ﻿using Library.Common.RabbitMqMessages.UserMessages;
 using Library.Services.Services;
 using Library.Shared.DTOs.ApiResponses;
+using Library.Shared.Exceptions;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +30,7 @@ namespace Library.UserAPI.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> RegisterUser(RegisterUserMessage dto)
+        public async Task<IActionResult> RegisterUser([FromBody] RegisterUserMessage dto)
         {
             try
             {
@@ -44,46 +45,20 @@ namespace Library.UserAPI.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> LoginUser(LoginUserMessage dto)
+        public async Task<IActionResult> LoginUser([FromBody] LoginUserMessage dto)
         {
             try
             {
                 var loginResult = await _service.LoginUserAsync(dto);
-                if (loginResult == null)
-                    return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>("Invalid credentials"));
-
-                // Build claims from loginResult.User
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, loginResult.User.Id.ToString()),
-                    new Claim(ClaimTypes.Name, loginResult.User.Username),
-                    new Claim(ClaimTypes.Email, loginResult.User.Email),
-                    new Claim(ClaimTypes.Role, loginResult.User.UserRole)
-                };
-
-                var jwtKey = _config["Jwt:Key"]
-                    ?? throw new InvalidOperationException("Jwt:Key is not configured.");
-                var expiresInMinutes = int.Parse(_config["Jwt:ExpiresInMinutes"] ?? "60");
-
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-                var token = new JwtSecurityToken(
-                    issuer: _config["Jwt:Issuer"],
-                    audience: _config["Jwt:Audience"],
-                    claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
-                    signingCredentials: creds
-                );
-
-                var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-                return Ok(ApiResponseHelper.Success(new
-                {
-                    token = tokenString,
-                    loggedInAt = loginResult.LoggedInAt,
-                    role = loginResult.User.UserRole
-                }));
+                return Ok(ApiResponseHelper.Success(loginResult));
+            }
+            catch (BadRequestException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>(ex.Message));
             }
             catch (Exception ex)
             {
