@@ -1,15 +1,9 @@
 ﻿using Library.Common.RabbitMqMessages.UserMessages;
-using Library.Services.Services;
 using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.Exceptions;
 using Library.UserAPI.Interfaces;
-using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Library.UserAPI.Controllers
 {
@@ -18,14 +12,10 @@ namespace Library.UserAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
-        private readonly IConfiguration _config;
-        private readonly IAuthService _authService;
 
-        public UserController(IUserService service, IConfiguration config, IAuthService authService)
+        public UserController(IUserService service)
         {
             _service = service;
-            _config = config;
-            _authService = authService;
         }
 
         [AllowAnonymous]
@@ -66,41 +56,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = "LocalJWT")]
-        [HttpGet("query")]
-        public IActionResult GetAllUsersQuery()
-        {
-            try
-            {
-                var query = _service.GetAllUsersQuery().ToList();
-                return Ok(ApiResponseHelper.Success(query));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponseHelper.Failure<List<UserListMessage>>(ex.Message));
-            }
-        }
-
-        [Authorize(AuthenticationSchemes = "LocalJWT")]
-        [HttpGet("query/{id}")]
-        public IActionResult GetUserByIdQuery(int id)
-        {
-            try
-            {
-                var query = _service.GetUserByIdQuery(id);
-                var user = query.FirstOrDefault();
-                if (user == null)
-                    return NotFound(ApiResponseHelper.Failure<UserListMessage>("User not found"));
-
-                return Ok(ApiResponseHelper.Success(user));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponseHelper.Failure<UserListMessage>(ex.Message));
-            }
-        }
-
-        [Authorize(AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.basic", AuthenticationSchemes = "LocalJWT")]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromQuery] int userId, [FromBody] string token)
         {
@@ -123,8 +79,41 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // Only Admins can deactivate users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [HttpGet("query")]
+        public IActionResult GetAllUsersQuery()
+        {
+            try
+            {
+                var query = _service.GetAllUsersQuery().ToList();
+                return Ok(ApiResponseHelper.Success(query));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<List<UserListMessage>>(ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [HttpGet("query/{id}")]
+        public IActionResult GetUserByIdQuery(int id)
+        {
+            try
+            {
+                var query = _service.GetUserByIdQuery(id);
+                var user = query.FirstOrDefault();
+                if (user == null)
+                    return NotFound(ApiResponseHelper.Failure<UserListMessage>("User not found"));
+
+                return Ok(ApiResponseHelper.Success(user));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<UserListMessage>(ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}/deactivate")]
         public async Task<IActionResult> DeactivateUser(int id, [FromQuery] int performedByUserId)
         {
@@ -147,8 +136,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // Only Admins can reactivate users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}/reactivate")]
         public async Task<IActionResult> ReactivateUser(int id, [FromQuery] int performedByUserId)
         {
@@ -171,8 +159,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        // Only Admins can archive users
-        [Authorize(Roles = "Admin", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("{id}/archive")]
         public async Task<IActionResult> ArchiveUser(int id, [FromQuery] int performedByUserId)
         {

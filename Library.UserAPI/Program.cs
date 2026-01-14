@@ -7,6 +7,7 @@ using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
@@ -90,7 +91,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-//Add authorization policies here
+// Add authorization policies here
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdminRole", policy =>
         policy.RequireRole("Admin"))
@@ -98,7 +99,10 @@ builder.Services.AddAuthorizationBuilder()
         policy.RequireClaim("Permission", "ManageUserTypes"))
     .AddPolicy("AdminWithPermission", policy =>
         policy.RequireRole("Admin")
-              .RequireClaim("Permission", "ManageUserTypes"));
+              .RequireClaim("Permission", "ManageUserTypes"))
+    .AddPolicy("user.manage", policy =>
+        policy.RequireClaim("Permission", "user.manage"));
+
 
 var app = builder.Build();
 

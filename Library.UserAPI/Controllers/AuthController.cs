@@ -3,7 +3,7 @@ using Library.Common.RabbitMqMessages.UserMessages;
 using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
-using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +25,7 @@ namespace Library.UserAPI.Controllers
             _userManager = userManager;
         }
 
+        [Authorize(Policy = "auth.manage", AuthenticationSchemes = "LocalJWT")]
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
@@ -46,9 +47,6 @@ namespace Library.UserAPI.Controllers
             if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
                 return Unauthorized("Deactivated accounts cannot refresh tokens.");
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault() ?? "User";
-
             // Build response DTO directly (flattened)
             var newRefreshToken = _authService.GenerateRefreshToken();
             var response = new LoginUserResponseMessage
@@ -56,7 +54,7 @@ namespace Library.UserAPI.Controllers
                 Id = user.Id,
                 Username = user.UserName ?? string.Empty,
                 Email = user.Email ?? string.Empty,
-                UserRole = role,
+                UserRole = "Admin", // role string no longer matters, perms drive access
                 LoggedInAt = DateTime.UtcNow,
                 RefreshToken = newRefreshToken
             };
@@ -84,6 +82,7 @@ namespace Library.UserAPI.Controllers
             return Ok(response);
         }
 
+        [Authorize(Policy = "auth.manage", AuthenticationSchemes = "LocalJWT")]
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequest request)
         {
