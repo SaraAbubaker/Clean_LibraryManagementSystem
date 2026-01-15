@@ -7,11 +7,10 @@ using Library.UserAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
-using System.Text.Json.Serialization;
+using Library.UserAPI.Seeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,57 +88,43 @@ builder.Services.AddAuthentication(options =>
             Encoding.UTF8.GetBytes(jwtKey)
         )
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            // Skip the default behavior
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"error\":\"User not authorized\"}");
+        }
+    };
 });
 
-// Add authorization policies here
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("RequireAdminRole", policy =>
-        policy.RequireRole("Admin"))
-    .AddPolicy("RequireManageUserTypes", policy =>
-        policy.RequireClaim("Permission", "ManageUserTypes"))
-    .AddPolicy("AdminWithPermission", policy =>
-        policy.RequireRole("Admin")
-              .RequireClaim("Permission", "ManageUserTypes"))
-    .AddPolicy("user.manage", policy =>
-        policy.RequireClaim("Permission", "user.manage"));
+
+// Authorization policies
+var authBuilder = builder.Services.AddAuthorizationBuilder();
+
+//Automatically add one policy per permission from seeder
+foreach (var perm in RolePermissionSeeder.Permissions)
+{
+    authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
+}
 
 
 var app = builder.Build();
 
-// --- Runtime seeding block ---
+//Seeding
 using (var scope = app.Services.CreateScope())
 {
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+    var services = scope.ServiceProvider;
 
-    // Ensure Admin role exists
-    if (!await roleManager.RoleExistsAsync("Admin"))
-    {
-        await roleManager.CreateAsync(new ApplicationRole { Name = "Admin", NormalizedName = "ADMIN" });
-    }
+    var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var db = services.GetRequiredService<ApplicationDbContext>();
 
-    // Ensure Normal role exists
-    if (!await roleManager.RoleExistsAsync("Normal"))
-    {
-        await roleManager.CreateAsync(new ApplicationRole { Name = "Normal", NormalizedName = "NORMAL" });
-    }
-
-    // Ensure Admin user exists
-    var adminUser = await userManager.FindByNameAsync("admin");
-    if (adminUser == null)
-    {
-        adminUser = new ApplicationUser
-        {
-            UserName = "admin",
-            Email = "admin@library.local",
-            EmailConfirmed = true,
-            CreatedDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            IsArchived = false,
-            SecurityStamp = Guid.NewGuid().ToString("D")
-        };
-        await userManager.CreateAsync(adminUser, "Admin@123");
-        await userManager.AddToRoleAsync(adminUser, "Admin");
-    }
+    await RolePermissionSeeder.SeedAsync(roleManager, db);
+    await UserSeeder.SeedAsync(userManager);
 }
 
 // Exception handler

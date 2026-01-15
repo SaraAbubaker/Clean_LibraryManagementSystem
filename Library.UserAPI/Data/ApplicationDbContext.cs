@@ -16,8 +16,9 @@ namespace Library.UserAPI.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        // NEW: DbSet for refresh tokens
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<Permission> Permissions { get; set; } = null!;
+        public DbSet<RolePermission> RolePermissions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -59,6 +60,27 @@ namespace Library.UserAPI.Data
                 .HasForeignKey(rt => rt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+
+            // NEW: Permissions table
+            builder.Entity<Permission>().ToTable("Permissions");
+            builder.Entity<Permission>().HasIndex(p => p.PermissionName).IsUnique(); //Unique permission naming
+
+            // NEW: RolePermissions join table
+            builder.Entity<RolePermission>().ToTable("RolePermissions");
+            builder.Entity<RolePermission>().HasKey(rp => new { rp.RoleId, rp.PermissionId });
+
+            // Many to Many Relationship
+            builder.Entity<RolePermission>()
+                .HasOne(rp => rp.Role)
+                .WithMany(r => r.RolePermissions)
+                .HasForeignKey(rp => rp.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<RolePermission>()
+                .HasOne(rp => rp.Permission)
+                .WithMany(p => p.RolePermissions)
+                .HasForeignKey(rp => rp.PermissionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -7,6 +7,8 @@ using Library.UserAPI.Models;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Library.UserAPI.Services
 {
@@ -182,8 +184,24 @@ namespace Library.UserAPI.Services
             var user = await _userManager.FindByIdAsync(userId.ToString())
                        ?? throw new InvalidOperationException("User not found.");
 
+            // Hash the incoming token
+            var Token = HashToken(token);
+
+            // Look up the refresh token by hash
+            var storedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(t => t.UserId == userId && t.Token == Token);
+
+            if (storedToken == null)
+                throw new InvalidOperationException("Refresh token not found.");
+
+            // Mark it revoked
+            storedToken.IsRevoked = true;
+            await _context.SaveChangesAsync();
+
+            // Clear sign-in state (cookies, Identity session)
             await _signInManager.SignOutAsync();
 
+            // Build logout message
             var dto = user.Adapt<LogoutUserMessage>();
             dto.LoggedOutAt = DateTime.UtcNow;
             dto.Status = "Success";
@@ -265,6 +283,15 @@ namespace Library.UserAPI.Services
             dto.UserRole = roles.FirstOrDefault() ?? "Unknown";
 
             return dto;
+        }
+
+        //Helper
+        private static string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
     }
 }

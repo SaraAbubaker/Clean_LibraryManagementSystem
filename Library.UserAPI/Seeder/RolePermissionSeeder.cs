@@ -1,14 +1,14 @@
-﻿using Library.UserAPI.Models;
+﻿using Library.UserAPI.Data;
+using Library.UserAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Security;
 
 namespace Library.UserAPI.Seeder
 {
     public static class RolePermissionSeeder
     {
-        private static readonly string[] Permissions = new[]
+        public static readonly string[] Permissions = new[]
         {
             "user.manage",       // register, login, logout, deactivate, reactivate, archive
             "user.basic",        // register, login, logout (self-service)
@@ -56,7 +56,7 @@ namespace Library.UserAPI.Seeder
         };
 
 
-        public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager, IdentityDbContext db)
+        public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager, ApplicationDbContext db)
         {
             // 1. Seed Roles
             var roles = new[] { "Admin", "Librarian", "Customer" };
@@ -76,9 +76,9 @@ namespace Library.UserAPI.Seeder
             // 2. Seed Permissions
             foreach (var perm in Permissions)
             {
-                if (!await db.Permissions.AnyAsync(p => p.Name == perm))
+                if (!await db.Permissions.AnyAsync(p => p.PermissionName == perm))
                 {
-                    db.Permissions.Add(new Permission { Name = perm });
+                    db.Permissions.Add(new Permission { PermissionName = perm });
                 }
             }
             await db.SaveChangesAsync();
@@ -89,13 +89,13 @@ namespace Library.UserAPI.Seeder
             await Assign(db, "Customer", CustomerPermissions);
         }
 
-        private static async Task Assign(IdentityDbContext db, string roleName, string[] permissions)
+        private static async Task Assign(ApplicationDbContext db, string roleName, string[] permissions)
         {
             var role = await db.Roles.FirstAsync(r => r.Name == roleName);
 
             foreach (var permName in permissions)
             {
-                var perm = await db.Permissions.FirstAsync(p => p.Name == permName);
+                var perm = await db.Permissions.FirstAsync(p => p.PermissionName == permName);
 
                 bool exists = await db.RolePermissions.AnyAsync(rp =>
                     rp.RoleId == role.Id && rp.PermissionId == perm.Id);

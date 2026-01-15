@@ -29,5 +29,8 @@ namespace Library.UserAPI.Models
         public bool IsArchived { get; set; } = false;
         public int? ArchivedByUserId { get; set; }
         public DateOnly? ArchivedDate { get; set; }
+
+        public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+
     }
 }
