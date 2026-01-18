@@ -32,7 +32,7 @@ namespace Library.UserAPI.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // Define claims using flattened DTO properties
+            // Base identity claims
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, loginResponse.Username ?? string.Empty),
@@ -42,6 +42,14 @@ namespace Library.UserAPI.Services
                 new Claim("loggedInAt", loginResponse.LoggedInAt.ToString("O")) // ISO 8601 format
             };
 
+            if (loginResponse.Permissions != null)
+            {
+                foreach (var permission in loginResponse.Permissions)
+                {
+                    claims.Add(new Claim("Permission", permission));
+                }
+            }
+
             // Build token
             var token = new JwtSecurityToken(
                 issuer: issuer,
@@ -50,7 +58,6 @@ namespace Library.UserAPI.Services
                 expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
                 signingCredentials: creds);
 
-            // Return serialized token
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 

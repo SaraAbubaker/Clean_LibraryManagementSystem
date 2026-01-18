@@ -74,6 +74,7 @@ namespace Library.UserAPI.Services
 
         public async Task<LoginUserResponseMessage> LoginUserAsync(LoginUserMessage dto)
         {
+            // Validate input
             Validate.ValidateModel(dto);
 
             var input = dto.UsernameOrEmail.Trim();
@@ -100,8 +101,15 @@ namespace Library.UserAPI.Services
                 throw new UnauthorizedAccessException("Deactivated accounts cannot log in.");
 
             // Get roles
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _userManager.GetRolesAsync(user) ?? new List<string>();
             var role = roles.FirstOrDefault() ?? "Unknown";
+
+            // Fetch permissions for this user’s role
+            var permissions = await _context.RolePermissions
+                .Where(rp => roles.Contains(rp.Role.Name ?? string.Empty))
+                .Select(rp => rp.Permission.PermissionName)
+                .Distinct()
+                .ToListAsync();
 
             // Generate refresh token
             var refreshToken = _authService.GenerateRefreshToken();
@@ -126,7 +134,8 @@ namespace Library.UserAPI.Services
                 Email = user.Email ?? string.Empty,
                 UserRole = role,
                 LoggedInAt = DateTime.UtcNow,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                Permissions = permissions
             };
 
             // Generate JWT using the flattened DTO
