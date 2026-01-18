@@ -3,6 +3,7 @@ using Library.Shared.DTOs;
 using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Book;
 using Library.Shared.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static Library.Shared.DTOs.SearchParamsDto;
@@ -21,6 +22,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "book.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> CreateBook([FromBody] CreateBookDto dto, [FromQuery] int userId)
         {
             try
@@ -39,6 +41,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
+        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> GetBookDetailsQuery(int id)
         {
             try
@@ -57,6 +60,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/author/{authorId}")]
+        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetBooksByAuthorQuery(int authorId)
         {
             try
@@ -71,6 +75,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/category/{categoryId}")]
+        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetBooksByCategoryQuery(int categoryId)
         {
             try
@@ -85,6 +90,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/search")]
+        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> SearchBooksQuery(
             [FromQuery] SearchBookParamsDto filters,
             [FromQuery] int page = 1,
@@ -111,6 +117,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "book.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> UpdateBook(int id, UpdateBookDto dto, [FromQuery] int userId)
         {
             try
@@ -131,6 +138,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
+        [Authorize(Policy = "book.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> ArchiveBook(int id, [FromQuery] int userId)
         {
             try
@@ -153,7 +161,5 @@ namespace Library.API.Controllers
                 return BadRequest(ApiResponseHelper.Failure<BookListDto>(ex.Message));
             }
         }
-
-
     }
 }

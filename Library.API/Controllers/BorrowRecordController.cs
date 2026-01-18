@@ -1,6 +1,7 @@
 ﻿using Library.Services.Interfaces;
 using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.BorrowRecord;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Library.API.Controllers
@@ -17,6 +18,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("borrow")]
+        [Authorize(Policy = "borrow.basic", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> BorrowBook(RequestBorrowDto dto, [FromQuery] int userId)
         {
             try
@@ -31,6 +33,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("return/{borrowRecordId}")]
+        [Authorize(Policy = "borrow.basic", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> ReturnBook(int borrowRecordId, [FromQuery] int userId)
         {
             try
@@ -48,6 +51,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
+        [Authorize(Policy = "borrow.manage", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetBorrowDetailsQuery()
         {
             try
@@ -62,6 +66,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/overdue")]
+        [Authorize(Policy = "borrow.manage", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetOverdueRecordsQuery()
         {
             try

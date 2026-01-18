@@ -1,6 +1,7 @@
 ﻿using Library.Services.Interfaces;
 using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Publisher;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Library.API.Controllers
@@ -18,6 +19,7 @@ namespace Library.API.Controllers
 
 
         [HttpPost]
+        [Authorize(Policy = "publisher.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> CreatePubliser([FromBody] CreatePublisherDto dto, [FromQuery] int createdByUserId)
         {
             try
@@ -32,6 +34,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
+        [Authorize(Policy = "publisher.basic", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetAllPublisersQuery()
         {
             try
@@ -46,6 +49,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
+        [Authorize(Policy = "publisher.basic", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetPubliserByIdQuery(int id)
         {
             try
@@ -64,6 +68,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "publisher.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> UpdatePubliser([FromBody] UpdatePublisherDto dto, int id, [FromQuery] int userId)
         {
             try
@@ -77,6 +82,7 @@ namespace Library.API.Controllers
             }
         }
 
+        [Authorize(Policy = "publisher.manage", AuthenticationSchemes = "LocalJWT")]
         [HttpPut("archive/{id}")]
         public async Task<IActionResult> ArchivePubliser(int id, [FromQuery] int? userId = null)
         {

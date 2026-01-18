@@ -2,6 +2,7 @@
 using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Category;
 using Library.Shared.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Library.API.Controllers
@@ -18,7 +19,8 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateCategory( CreateCategoryDto dto, [FromQuery] int userId)
+        [Authorize(Policy = "category.manage", AuthenticationSchemes = "LocalJWT")]
+        public async Task<IActionResult> CreateCategory(CreateCategoryDto dto, [FromQuery] int userId)
         {
             try
             {
@@ -32,6 +34,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
+        [Authorize(Policy = "category.basic", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetAllCategoriesQuery()
         {
             try
@@ -46,6 +49,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
+        [Authorize(Policy = "category.basic", AuthenticationSchemes = "LocalJWT")]
         public IActionResult GetCategoryByIdQuery(int id)
         {
             try
@@ -64,6 +68,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Policy = "category.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> UpdateCategory(UpdateCategoryDto dto, [FromQuery] int userId)
         {
             try
@@ -82,6 +87,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
+        [Authorize(Policy = "category.manage", AuthenticationSchemes = "LocalJWT")]
         public async Task<IActionResult> ArchiveCategory(int id, [FromQuery] int userId)
         {
             try
