@@ -29,7 +29,7 @@ namespace Library.API.Controllers
         [HttpPost]
         [ProducesResponseType(400)]
         [ProducesResponseType(typeof(AuthorListDto), 201)]
-        [Authorize(Policy = "author.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> CreateAuthor([FromBody] CreateAuthorDto dto, [FromQuery] int userId)
         {
             try
@@ -55,7 +55,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        [Authorize(Policy = "author.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "author.manage")]
         public IActionResult ListAuthorsQuery()
         {
             try
@@ -70,7 +70,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "author.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> GetAuthorByIdQuery(int id)
         {
             try
@@ -89,7 +89,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "author.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> EditAuthor(int id, [FromBody] UpdateAuthorDto dto, [FromQuery] int userId)
         {
             try
@@ -111,7 +111,7 @@ namespace Library.API.Controllers
 
 
         [HttpPut("archive/{id}")]
-        [Authorize(Policy = "author.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> ArchiveAuthor(int id, [FromQuery] int userId)
         {
             try

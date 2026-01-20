@@ -17,7 +17,7 @@ namespace Library.UserAPI.Controllers
             _service = service;
         }
 
-        [Authorize(Policy = "usertype.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "usertype.manage")]
         [HttpPost]
         public async Task<IActionResult> CreateUserType([FromBody] CreateUserTypeMessage dto, [FromQuery] int createdByUserId)
         {
@@ -32,7 +32,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "usertype.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "usertype.manage")]
         [HttpGet("query")]
         public IActionResult GetAllUserTypesQuery()
         {
@@ -47,7 +47,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "usertype.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "usertype.manage")]
         [HttpGet("query/{id}")]
         public IActionResult GetUserTypeByIdQuery(int id)
         {
@@ -66,7 +66,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "usertype.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "usertype.manage")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUserType([FromBody] UpdateUserTypeMessage dto, int id, [FromQuery] int userId)
         {
@@ -81,7 +81,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "usertype.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "usertype.manage")]
         [HttpPut("archive/{id}")]
         public async Task<IActionResult> ArchiveUserType(int id, [FromQuery] int userId)
         {

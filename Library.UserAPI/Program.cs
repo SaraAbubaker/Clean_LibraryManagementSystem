@@ -17,8 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 //ApplicationDbContext extends IdentityDbContext<ApplicationUser, ApplicationRole, int>
 //This wires EF Core + Identity together so you get AspNetUsers, AspNetRoles, etc.
 
-var connectionString = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(
-    builder.Configuration.GetConnectionString("DefaultConnection"))
+var connectionString = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+    (builder.Configuration.GetConnectionString("DefaultConnection"))
 {
     Encrypt = false,
     TrustServerCertificate = true
@@ -69,10 +69,10 @@ builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<Appl
 // Authentication + Authorization
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = "LocalJWT";
-    options.DefaultChallengeScheme = "LocalJWT";
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer("LocalJWT", options =>
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
     var jwtKey = builder.Configuration["Jwt:Key"]
                  ?? throw new InvalidOperationException("Jwt:Key is not configured.");

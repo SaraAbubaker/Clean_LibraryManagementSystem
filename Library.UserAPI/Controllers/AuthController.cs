@@ -25,7 +25,7 @@ namespace Library.UserAPI.Controllers
             _userManager = userManager;
         }
 
-        [Authorize(Policy = "auth.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "auth.manage")]
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
@@ -82,7 +82,7 @@ namespace Library.UserAPI.Controllers
             return Ok(response);
         }
 
-        [Authorize(Policy = "auth.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "auth.manage")]
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequest request)
         {

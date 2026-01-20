@@ -19,7 +19,7 @@ namespace Library.API.Controllers
 
 
         [HttpPost]
-        [Authorize(Policy = "publisher.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "publisher.manage")]
         public async Task<IActionResult> CreatePubliser([FromBody] CreatePublisherDto dto, [FromQuery] int createdByUserId)
         {
             try
@@ -34,7 +34,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        [Authorize(Policy = "publisher.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "publisher.basic")]
         public IActionResult GetAllPublisersQuery()
         {
             try
@@ -49,7 +49,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "publisher.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "publisher.basic")]
         public IActionResult GetPubliserByIdQuery(int id)
         {
             try
@@ -68,7 +68,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "publisher.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "publisher.manage")]
         public async Task<IActionResult> UpdatePubliser([FromBody] UpdatePublisherDto dto, int id, [FromQuery] int userId)
         {
             try
@@ -82,7 +82,7 @@ namespace Library.API.Controllers
             }
         }
 
-        [Authorize(Policy = "publisher.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "publisher.manage")]
         [HttpPut("archive/{id}")]
         public async Task<IActionResult> ArchivePubliser(int id, [FromQuery] int? userId = null)
         {

@@ -22,7 +22,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "book.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.manage")]
         public async Task<IActionResult> CreateBook([FromBody] CreateBookDto dto, [FromQuery] int userId)
         {
             try
@@ -41,7 +41,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.basic")]
         public async Task<IActionResult> GetBookDetailsQuery(int id)
         {
             try
@@ -60,7 +60,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/author/{authorId}")]
-        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.basic")]
         public IActionResult GetBooksByAuthorQuery(int authorId)
         {
             try
@@ -75,7 +75,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/category/{categoryId}")]
-        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.basic")]
         public IActionResult GetBooksByCategoryQuery(int categoryId)
         {
             try
@@ -90,7 +90,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/search")]
-        [Authorize(Policy = "book.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.basic")]
         public async Task<IActionResult> SearchBooksQuery(
             [FromQuery] SearchBookParamsDto filters,
             [FromQuery] int page = 1,
@@ -117,7 +117,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "book.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.manage")]
         public async Task<IActionResult> UpdateBook(int id, UpdateBookDto dto, [FromQuery] int userId)
         {
             try
@@ -138,7 +138,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
-        [Authorize(Policy = "book.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "book.manage")]
         public async Task<IActionResult> ArchiveBook(int id, [FromQuery] int userId)
         {
             try

@@ -56,7 +56,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "user.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.basic")]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromQuery] int userId, [FromBody] string token)
         {
@@ -79,7 +79,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage")]
         [HttpGet("query")]
         public IActionResult GetAllUsersQuery()
         {
@@ -94,7 +94,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage")]
         [HttpGet("query/{id}")]
         public IActionResult GetUserByIdQuery(int id)
         {
@@ -113,7 +113,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage")]
         [HttpPut("{id}/deactivate")]
         public async Task<IActionResult> DeactivateUser(int id, [FromQuery] int performedByUserId)
         {
@@ -136,7 +136,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage")]
         [HttpPut("{id}/reactivate")]
         public async Task<IActionResult> ReactivateUser(int id, [FromQuery] int performedByUserId)
         {
@@ -159,7 +159,7 @@ namespace Library.UserAPI.Controllers
             }
         }
 
-        [Authorize(Policy = "user.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "user.manage")]
         [HttpPut("{id}/archive")]
         public async Task<IActionResult> ArchiveUser(int id, [FromQuery] int performedByUserId)
         {

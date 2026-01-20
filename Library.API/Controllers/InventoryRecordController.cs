@@ -17,7 +17,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "inventory.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "inventory.manage")]
         public async Task<IActionResult> CreateCopy(int bookId, [FromQuery] int userId)
         {
             try
@@ -32,7 +32,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("return/{inventoryRecordId}")]
-        [Authorize(Policy = "inventory.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "inventory.manage")]
         public async Task<IActionResult> ReturnCopy(int inventoryRecordId, [FromQuery] int userId)
         {
             try
@@ -51,7 +51,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("book/{bookId}/query")]
-        [Authorize(Policy = "inventory.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "inventory.manage")]
         public IActionResult ListCopiesQuery(int bookId)
         {
             try
@@ -66,7 +66,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("available/{bookId}/query")]
-        [Authorize(Policy = "inventory.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "inventory.manage")]
         public IActionResult ListAvailableCopiesQuery(int bookId)
         {
             try
@@ -81,7 +81,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
-        [Authorize(Policy = "inventory.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "inventory.manage")]
         public async Task<IActionResult> ArchiveCopy(int id, [FromQuery] int userId)
         {
             try

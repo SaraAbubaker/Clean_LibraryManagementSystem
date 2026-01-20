@@ -18,7 +18,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("borrow")]
-        [Authorize(Policy = "borrow.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "borrow.basic")]
         public async Task<IActionResult> BorrowBook(RequestBorrowDto dto, [FromQuery] int userId)
         {
             try
@@ -33,7 +33,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("return/{borrowRecordId}")]
-        [Authorize(Policy = "borrow.basic", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "borrow.basic")]
         public async Task<IActionResult> ReturnBook(int borrowRecordId, [FromQuery] int userId)
         {
             try
@@ -51,7 +51,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        [Authorize(Policy = "borrow.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "borrow.manage")]
         public IActionResult GetBorrowDetailsQuery()
         {
             try
@@ -66,7 +66,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/overdue")]
-        [Authorize(Policy = "borrow.manage", AuthenticationSchemes = "LocalJWT")]
+        [Authorize(Policy = "borrow.manage")]
         public IActionResult GetOverdueRecordsQuery()
         {
             try

@@ -1,4 +1,6 @@
-﻿namespace Library.Common.RabbitMqMessages.UserMessages
+﻿using System.Text.Json.Serialization;
+
+namespace Library.Common.RabbitMqMessages.UserMessages
 {
     public class LoginUserResponseMessage
     {
@@ -8,8 +10,10 @@
         public string UserRole { get; set; } = string.Empty;
 
         public DateTime LoggedInAt { get; set; } = DateTime.UtcNow;
-        public List<string> Permissions { get; set; } = new();
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public List<string> Permissions { get; set; } = new();
     }
 }

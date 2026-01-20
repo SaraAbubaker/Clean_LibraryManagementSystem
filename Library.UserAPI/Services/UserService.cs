@@ -80,25 +80,29 @@ namespace Library.UserAPI.Services
             var input = dto.UsernameOrEmail.Trim();
             var password = dto.Password.Trim();
 
-            // Attempt sign-in
-            var result = await _signInManager.PasswordSignInAsync(
-                input, password, isPersistent: false, lockoutOnFailure: true);
-
-            if (!result.Succeeded)
-                throw new BadRequestException("Invalid username/email or password.");
-
-            // Find user by username or email
-            var user = await _userManager.FindByNameAsync(input)
-                       ?? await _userManager.FindByEmailAsync(input);
+            // Resolve user by username OR email
+            ApplicationUser? user;
+            if (input.Contains("@"))
+                user = await _userManager.FindByEmailAsync(input);
+            else
+                user = await _userManager.FindByNameAsync(input);
 
             if (user == null)
-                throw new InvalidOperationException("User not found.");
+                throw new BadRequestException("Invalid username/email or password.");
 
+            // Custom checks BEFORE sign-in
             if (user.IsArchived)
                 throw new UnauthorizedAccessException("Archived accounts cannot log in.");
 
             if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
                 throw new UnauthorizedAccessException("Deactivated accounts cannot log in.");
+
+            // Attempt sign-in using the resolved user object
+            var result = await _signInManager.CheckPasswordSignInAsync(
+                user, password, lockoutOnFailure: true);
+
+            if (!result.Succeeded)
+                throw new BadRequestException("Invalid username/email or password.");
 
             // Get roles
             var roles = await _userManager.GetRolesAsync(user) ?? new List<string>();
@@ -126,7 +130,7 @@ namespace Library.UserAPI.Services
             _context.RefreshTokens.Add(refreshEntity);
             await _context.SaveChangesAsync();
 
-            // Build response DTO directly (flattened)
+            // Build response DTO
             var response = new LoginUserResponseMessage
             {
                 Id = user.Id,
@@ -138,11 +142,12 @@ namespace Library.UserAPI.Services
                 Permissions = permissions
             };
 
-            // Generate JWT using the flattened DTO
+            // Generate JWT
             response.AccessToken = _authService.GenerateJwtToken(response);
 
             return response;
         }
+
 
         public IQueryable<UserListMessage> GetAllUsersQuery()
         {
