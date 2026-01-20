@@ -9,6 +9,9 @@
     <Project Path="Library.Services/Library.Services.csproj" Id="49771547-080b-42e5-b26a-2430b821fcbe" />
     <Project Path="Library.Shared/Library.Shared.csproj" Id="adeee9d1-6f11-4880-9062-e330a5f92dec" />
   </Folder>
+  <Folder Name="/Library UI/">
+    <Project Path="Library.UI/Library.UI.csproj" Id="57cf0edb-90c5-4080-8592-f012773bddee" />
+  </Folder>
   <Folder Name="/Library User/">
     <Project Path="Library.UserAPI/Library.UserAPI.csproj" Id="15566c11-6dcb-4454-8d44-13b065aaad65" />
   </Folder>
