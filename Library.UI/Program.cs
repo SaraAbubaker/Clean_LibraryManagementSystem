@@ -1,3 +1,7 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -20,16 +24,32 @@ builder.Services.AddHttpClient("Library.UserApi", client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
+//Use JWT Bearer authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var jwtKey = builder.Configuration["Jwt:Key"]
+                 ?? throw new InvalidOperationException("Jwt:Key is not configured.");
 
-builder.Services.AddAuthentication("Bearer")
-    .AddCookie("Bearer", options =>
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.LoginPath = "/Account/Login";   // redirect if not logged in
-        options.AccessDeniedPath = "/Account/AccessDenied";
-    });
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtKey)
+        )
+    };
+});
 
 builder.Services.AddAuthorization();
-
 
 var app = builder.Build();
 
@@ -37,7 +57,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -55,6 +74,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
 
 app.Run();

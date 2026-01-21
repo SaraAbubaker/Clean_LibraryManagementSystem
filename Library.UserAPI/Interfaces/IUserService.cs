@@ -4,7 +4,7 @@ namespace Library.UserAPI.Interfaces
 {
     public interface IUserService
     {
-        Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto);
+        Task<LoginUserResponseMessage> RegisterUserAsync(RegisterUserMessage dto);
         Task<LoginUserResponseMessage> LoginUserAsync(LoginUserMessage dto);
         IQueryable<UserListMessage> GetUserByIdQuery(int id);
         IQueryable<UserListMessage> GetAllUsersQuery();

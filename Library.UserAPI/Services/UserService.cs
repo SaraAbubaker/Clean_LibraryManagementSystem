@@ -37,7 +37,7 @@ namespace Library.UserAPI.Services
             _context = context;
         }
 
-        public async Task<UserListMessage> RegisterUserAsync(RegisterUserMessage dto)
+        public async Task<LoginUserResponseMessage> RegisterUserAsync(RegisterUserMessage dto)
         {
             Validate.ValidateModel(dto);
 
@@ -63,13 +63,17 @@ namespace Library.UserAPI.Services
             if (!result.Succeeded)
                 throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-            if (await _roleManager.RoleExistsAsync("Normal"))
-                await _userManager.AddToRoleAsync(user, "Normal");
+            if (await _roleManager.RoleExistsAsync("Customer"))
+                await _userManager.AddToRoleAsync(user, "Customer");
 
-            var outDto = user.Adapt<UserListMessage>();
-            outDto.UserRole = "Normal";
+            //call LoginUserAsync with the new credentials
+            var loginDto = new LoginUserMessage
+            {
+                UsernameOrEmail = dto.Username,
+                Password = dto.Password
+            };
 
-            return outDto;
+            return await LoginUserAsync(loginDto);
         }
 
         public async Task<LoginUserResponseMessage> LoginUserAsync(LoginUserMessage dto)
@@ -156,7 +160,6 @@ namespace Library.UserAPI.Services
 
             return response;
         }
-
 
         public IQueryable<UserListMessage> GetAllUsersQuery()
         {

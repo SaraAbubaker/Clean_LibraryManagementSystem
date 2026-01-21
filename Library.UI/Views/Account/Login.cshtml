@@ -11,16 +11,52 @@
 
     <div class="mb-3">
         <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" type="password" class="form-control" />
+        <div class="position-relative">
+            <input asp-for="Password" type="password" class="form-control" id="passwordInput" />
+            <i class="fa-regular fa-eye" id="togglePassword"
+               style="position:absolute; right:17px; top:50%; transform:translateY(-50%);
+                  cursor:pointer; color:#000; transition: opacity 0.15s ease, color 0.15s ease;"></i>
+        </div>
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
+
     <div class="mb-4">
-    <button type="submit" class="btn btn-primary">Login</button>
+        <button type="submit" class="btn btn-primary">Login</button>
     </div>
 </form>
+
+<div class="mt-3">
+    <p>
+        Don’t have an account?
+        <a asp-controller="Account" asp-action="Register">Register here</a>
+    </p>
+</div>
 
 @if (ViewData["ErrorMessage"] != null)
 {
     <p class="text-danger">@ViewData["ErrorMessage"]</p>
+}
+
+@section Scripts {
+    <script>
+        const togglePassword = document.querySelector("#togglePassword");
+        const passwordInput = document.querySelector("#passwordInput");
+
+        togglePassword.addEventListener("click", () => {
+            const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+            passwordInput.setAttribute("type", type);
+
+            // quick fade out, swap class, fade back in
+            togglePassword.style.opacity = 0;
+
+            setTimeout(() => {
+                togglePassword.className = type === "password"
+                    ? "fa-regular fa-eye"
+                    : "fa-solid fa-eye";
+
+                togglePassword.style.opacity = 1;
+            }, 150); // faster delay to match transition
+        });
+    </script>
 }

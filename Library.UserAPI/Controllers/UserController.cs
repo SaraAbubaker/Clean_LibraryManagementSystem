@@ -27,11 +27,20 @@ namespace Library.UserAPI.Controllers
                 var result = await _service.RegisterUserAsync(dto);
                 return Ok(ApiResponseHelper.Success(result));
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest(ApiResponseHelper.Failure<RegisterUserMessage>(ex.Message));
+                return Conflict(ApiResponseHelper.Failure<string>(ex.Message));
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(ApiResponseHelper.Failure<string>(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<string>(ex.Message));
             }
         }
+
 
         [AllowAnonymous]
         [HttpPost("login")]
