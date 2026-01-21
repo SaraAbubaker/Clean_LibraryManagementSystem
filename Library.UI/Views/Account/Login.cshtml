@@ -1,0 +1,26 @@
+﻿@model Library.Common.RabbitMqMessages.UserMessages.LoginUserMessage
+
+<h2 class="mb-4">Login</h2>
+
+<form asp-action="Login" method="post">
+    <div class="mb-3">
+        <label asp-for="UsernameOrEmail" class="form-label"></label>
+        <input asp-for="UsernameOrEmail" class="form-control" />
+        <span asp-validation-for="UsernameOrEmail" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" type="password" class="form-control" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-4">
+    <button type="submit" class="btn btn-primary">Login</button>
+    </div>
+</form>
+
+@if (ViewData["ErrorMessage"] != null)
+{
+    <p class="text-danger">@ViewData["ErrorMessage"]</p>
+}

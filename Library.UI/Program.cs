@@ -15,7 +15,7 @@ builder.Services.AddSession(options =>
 var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
     ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured.");
 
-builder.Services.AddHttpClient("LibraryApi", client =>
+builder.Services.AddHttpClient("Library.UserApi", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });

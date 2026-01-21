@@ -88,21 +88,30 @@ namespace Library.UserAPI.Services
                 user = await _userManager.FindByNameAsync(input);
 
             if (user == null)
-                throw new BadRequestException("Invalid username/email or password.");
+            {
+                if (input.Contains("@"))
+                    throw new BadRequestException("Invalid email.");
+                else
+                    throw new BadRequestException("Invalid username.");
+            }
 
-            // Custom checks BEFORE sign-in
             if (user.IsArchived)
-                throw new UnauthorizedAccessException("Archived accounts cannot log in.");
+                throw new UnauthorizedAccessException("This account has been archived and cannot log in.");
 
             if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
-                throw new UnauthorizedAccessException("Deactivated accounts cannot log in.");
+                throw new UnauthorizedAccessException("This account is currently deactivated or locked out.");
 
             // Attempt sign-in using the resolved user object
             var result = await _signInManager.CheckPasswordSignInAsync(
                 user, password, lockoutOnFailure: true);
 
             if (!result.Succeeded)
-                throw new BadRequestException("Invalid username/email or password.");
+            {
+                if (string.IsNullOrWhiteSpace(password))
+                    throw new BadRequestException("Password cannot be empty.");
+                else
+                    throw new BadRequestException("Invalid password.");
+            }
 
             // Get roles
             var roles = await _userManager.GetRolesAsync(user) ?? new List<string>();
