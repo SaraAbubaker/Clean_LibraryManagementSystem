@@ -1,5 +1,6 @@
 ﻿using Library.UserAPI.Data;
 using Library.UserAPI.Models;
+using Library.Common.StringConstants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,49 +11,49 @@ namespace Library.UserAPI.Seeder
     {
         public static readonly string[] Permissions = new[]
         {
-            "user.manage",       // register, login, logout, deactivate, reactivate, archive
-            "user.basic",        // register, login, logout (self-service)
+            PermissionNames.UserManage,       // register, login, logout, deactivate, reactivate, archive
+            PermissionNames.UserBasic,        // register, login, logout (self-service)
 
-            "usertype.manage",   // create, update, archive, view
-            "auth.manage",       // jwt, refresh, hash
+            PermissionNames.UserTypeManage,   // create, update, archive, view
+            PermissionNames.AuthManage,       // jwt, refresh, hash
 
-            "author.manage",     // create, update, archive, view
+            PermissionNames.AuthorManage,     // create, update, archive, view
 
-            "book.manage",       // create, update, archive, search, view
-            "book.basic",        // search, view available books
+            PermissionNames.BookManage,       // create, update, archive, search, view
+            PermissionNames.BookBasic,        // search, view available books
 
-            "borrow.manage",     // borrow, return, availability, overdue
-            "borrow.basic",      // borrow, return
+            PermissionNames.BorrowManage,     // borrow, return, availability, overdue
+            PermissionNames.BorrowBasic,      // borrow, return
 
-            "category.manage",   // create, update, archive, view
-            "category.basic",    // view only
+            PermissionNames.CategoryManage,   // create, update, archive, view
+            PermissionNames.CategoryBasic,    // view only
 
-            "inventory.manage",  // create copy, return copy, archive copy, view copies
+            PermissionNames.InventoryManage,  // create copy, return copy, archive copy, view copies
 
-            "publisher.manage",  // create, update, archive, view
-            "publisher.basic"    // view only
+            PermissionNames.PublisherManage,  // create, update, archive, view
+            PermissionNames.PublisherBasic    // view only
         };
 
         // Librarian: operational domains + limited user actions
         private static readonly string[] LibrarianPermissions = new[]
         {
-            "user.basic",
-            "author.manage",
-            "book.manage",
-            "borrow.manage",
-            "category.manage",
-            "inventory.manage",
-            "publisher.manage"
+            PermissionNames.UserBasic,
+            PermissionNames.AuthorManage,
+            PermissionNames.BookManage,
+            PermissionNames.BorrowManage,
+            PermissionNames.CategoryManage,
+            PermissionNames.InventoryManage,
+            PermissionNames.PublisherManage
         };
 
         // Customer: self-service + limited view/borrow
         private static readonly string[] CustomerPermissions = new[]
         {
-            "user.basic",
-            "book.basic",
-            "borrow.basic",
-            "category.basic",
-            "publisher.basic"
+            PermissionNames.UserBasic,
+            PermissionNames.BookBasic,
+            PermissionNames.BorrowBasic,
+            PermissionNames.CategoryBasic,
+            PermissionNames.PublisherBasic
         };
 
 

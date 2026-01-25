@@ -1,5 +1,4 @@
-﻿
-namespace Library.Common.Queues
+﻿namespace Library.Common.StringConstants
 {
     public static class LoggingQueues
     {

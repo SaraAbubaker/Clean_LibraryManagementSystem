@@ -1,5 +1,5 @@
-﻿using Library.Common.RabbitMqMessages.UserMessages;
-using Library.Shared.DTOs.ApiResponses;
+﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.RabbitMqMessages.UserMessages;
 using Library.Shared.Exceptions;
 using Library.UserAPI.Interfaces;
 using Microsoft.AspNetCore.Authorization;

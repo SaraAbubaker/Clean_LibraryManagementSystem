@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Library.UserAPI.Seeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,11 +26,20 @@ builder.Services.AddHttpClient("Library.UserApi", client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
-//Use JWT Bearer authentication
+// Configure authentication with both Cookies and JWT
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    // Default to cookies for MVC controllers
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
 })
 .AddJwtBearer(options =>
 {
@@ -50,6 +61,12 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+var authBuilder = builder.Services.AddAuthorizationBuilder();
+foreach (var perm in RolePermissionSeeder.Permissions)
+{
+    authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
+}
 
 var app = builder.Build();
 

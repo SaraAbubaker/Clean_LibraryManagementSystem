@@ -1,4 +1,5 @@
-﻿using Library.Common.RabbitMqMessages.UserTypeMessages;
+﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.RabbitMqMessages.UserTypeMessages;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
@@ -15,14 +16,18 @@ namespace Library.UI.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
-        [Authorize]
+        [Authorize(Policy = "usertype.manage")]
+        [HttpGet]
         public async Task<IActionResult> Secret()
         {
-            // Get JWT from session
-            var token = HttpContext.Session.GetString("AccessToken");
+            // 🔎 Inspect all claims in the current cookie identity
+            var claimsInfo = string.Join("\n", User.Claims.Select(c => $"{c.Type} = {c.Value}"));
+
+            // Grab JWT from the authenticated user’s claims
+            var token = User.Claims.FirstOrDefault(c => c.Type == "access_token")?.Value;
             if (string.IsNullOrEmpty(token))
             {
-                return RedirectToAction("Login", "Account");
+                return Content("❌ No JWT found in claims. Did you forget to store it in SignInHelper?\n\nClaims:\n" + claimsInfo);
             }
 
             // Create client and attach JWT
@@ -34,20 +39,23 @@ namespace Library.UI.Controllers
             var response = await client.GetAsync("/api/usertype/query");
             if (!response.IsSuccessStatusCode)
             {
-                return Content($"❌ Failed to fetch user types: {response.StatusCode}");
+                return Content($"❌ Failed to fetch user types: {response.StatusCode}\n\nClaims:\n" + claimsInfo);
             }
 
             var body = await response.Content.ReadAsStringAsync();
-            var userTypes = JsonSerializer.Deserialize<List<UserTypeListMessage>>(body);
+            var apiResponse = JsonSerializer.Deserialize<ApiResponse<List<UserTypeListMessage>>>(body);
+            var userTypes = apiResponse?.Data;
 
-            // Show result
-            return Content($"🎉 Authorized! Found {userTypes?.Count ?? 0} user types.");
+            return Content($"🎉 Authorized! Found {userTypes?.Count ?? 0} user types.\n\nClaims:\n" + claimsInfo);
         }
 
+
         [AllowAnonymous]
+        [HttpGet]
         public IActionResult Public()
         {
             return Content("Anyone can see this public demo endpoint.");
         }
+
     }
 }

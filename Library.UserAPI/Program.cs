@@ -1,5 +1,4 @@
-﻿
-using Library.UserAPI.Data;
+﻿using Library.UserAPI.Data;
 using Library.UserAPI.Interfaces;
 using Library.UserAPI.Models;
 using Library.UserAPI.Repositories.UserRepo;
@@ -11,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
 using Library.UserAPI.Seeder;
+using Library.Common.StringConstants; // <-- added so we can use PermissionNames
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +61,7 @@ builder.Services.AddSwaggerGen(c =>
 // Register repositories and services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserTypeService, UserTypeService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Optional: custom password hasher
@@ -93,8 +94,15 @@ builder.Services.AddAuthentication(options =>
     {
         OnChallenge = context =>
         {
-            // Skip the default behavior
+            // This is for missing/invalid token
             context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"error\":\"Invalid or missing token\"}");
+        },
+        OnForbidden = context =>
+        {
+            // This is for valid token but insufficient permissions
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             context.Response.ContentType = "application/json";
             return context.Response.WriteAsync("{\"error\":\"User not authorized\"}");
@@ -106,8 +114,8 @@ builder.Services.AddAuthentication(options =>
 // Authorization policies
 var authBuilder = builder.Services.AddAuthorizationBuilder();
 
-//Automatically add one policy per permission from seeder
-foreach (var perm in RolePermissionSeeder.Permissions)
+//Automatically add one policy per permission from shared constants
+foreach (var perm in PermissionNames.All)
 {
     authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
 }
@@ -128,15 +136,18 @@ using (var scope = app.Services.CreateScope())
     await UserSeeder.SeedAsync(userManager);
 }
 
-// Exception handler
-app.UseExceptionHandler(errorApp =>
+// Exception handler (only in non-dev)
+if (!app.Environment.IsDevelopment())
 {
-    errorApp.Run(async context =>
+    app.UseExceptionHandler(errorApp =>
     {
-        context.Response.StatusCode = 500;
-        await context.Response.WriteAsync("An error occurred in UserAPI.");
+        errorApp.Run(async context =>
+        {
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("An error occurred in UserAPI.");
+        });
     });
-});
+}
 
 // Swagger in dev
 if (app.Environment.IsDevelopment())

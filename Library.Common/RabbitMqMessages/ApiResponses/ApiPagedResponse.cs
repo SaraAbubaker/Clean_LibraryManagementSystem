@@ -1,5 +1,4 @@
-﻿
-namespace Library.Shared.DTOs.ApiResponses
+﻿namespace Library.Common.RabbitMqMessages.ApiResponses
 {
     public class ApiPagedResponse<T>
     {
