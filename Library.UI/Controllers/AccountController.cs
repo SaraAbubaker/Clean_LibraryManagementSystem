@@ -1,19 +1,24 @@
 ﻿using Library.Common.RabbitMqMessages.UserMessages;
 using Library.UI.Helpers;
+using Library.UI.Models.String_constant;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Library.UI.Controllers
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ApiSettings _apiSettings;
 
-        public AccountController(IHttpClientFactory httpClientFactory)
+        public AccountController(IHttpClientFactory httpClientFactory, IOptions<ApiSettings> apiSettings)
         {
             _httpClientFactory = httpClientFactory;
+            _apiSettings = apiSettings.Value;
         }
 
         [HttpGet]
@@ -22,7 +27,7 @@ namespace Library.UI.Controllers
         [HttpGet]
         public IActionResult Login() => View();
 
-        [AllowAnonymous]
+
         [HttpPost]
         public async Task<IActionResult> Register(RegisterUserMessage input)
         {
@@ -31,17 +36,16 @@ namespace Library.UI.Controllers
             var client = _httpClientFactory.CreateClient("Library.UserApi");
 
             var registerResponse = await ApiClientHelper.PostJsonAsync<UserListMessage>(
-                client, "/api/user/register", input);
+                client, _apiSettings.Endpoints.Register, input);
 
             if (registerResponse?.Success == true)
             {
                 var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
-                    client, "/api/user/login",
+                    client, _apiSettings.Endpoints.Login,
                     new LoginUserMessage { UsernameOrEmail = input.Email, Password = input.Password });
 
                 if (loginResponse?.Success == true && loginResponse.Data != null)
                 {
-                    // ✅ Use SignInHelper to create cookie from JWT
                     await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
                     return RedirectToAction("Index", "Home");
                 }
@@ -51,18 +55,16 @@ namespace Library.UI.Controllers
             return View(input);
         }
 
-        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Login(LoginUserMessage input)
         {
             var client = _httpClientFactory.CreateClient("Library.UserApi");
 
             var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
-                client, "/api/user/login", input);
+                client, _apiSettings.Endpoints.Login, input);
 
             if (loginResponse?.Success == true && loginResponse.Data != null)
             {
-                // ✅ Use SignInHelper to create cookie from JWT
                 await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
                 return RedirectToAction("Index", "Home");
             }

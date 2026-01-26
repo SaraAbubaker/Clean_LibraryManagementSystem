@@ -1,0 +1,32 @@
+﻿@model Library.UI.Models.UserTypeViewModel
+
+<h2>User Types</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else if (Model.UserTypes.Any())
+{
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var type in Model.UserTypes)
+            {
+                <tr>
+                    <td>@type.Id</td>
+                    <td>@type.Role</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No user types found.</div>
+}

@@ -1,13 +1,16 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Library.UI.Models.String_constant;
+using Library.UserAPI.Seeder;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Library.UserAPI.Seeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.Configure<ApiSettings>(
+    builder.Configuration.GetSection("ApiSettings"));
 
 builder.Services.AddDistributedMemoryCache();
 

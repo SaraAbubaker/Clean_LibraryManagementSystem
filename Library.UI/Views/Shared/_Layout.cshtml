@@ -30,15 +30,17 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Demo" asp-action="Public">Public Demo</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Demo" asp-action="Secret">Secret Demo</a>
-                        </li>
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
+                            @* Show UserType only if role is Admin *@
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="UserType" asp-action="Index">User Types</a>
+                                </li>
+                            }
+
                             <li class="nav-item">
                                 <a href="javascript:void(0);"
                                    class="nav-link text-dark"
