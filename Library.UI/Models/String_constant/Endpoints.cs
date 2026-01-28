@@ -4,6 +4,5 @@
     {
         public string Login { get; set; } = string.Empty;
         public string Register { get; set; } = string.Empty;
-        public string UserTypes { get; set; } = string.Empty;
     }
 }

@@ -27,50 +27,70 @@ namespace Library.UI.Controllers
         [HttpGet]
         public IActionResult Login() => View();
 
-
         [HttpPost]
         public async Task<IActionResult> Register(RegisterUserMessage input)
         {
             if (!ModelState.IsValid) return View(input);
 
-            var client = _httpClientFactory.CreateClient("Library.UserApi");
-
-            var registerResponse = await ApiClientHelper.PostJsonAsync<UserListMessage>(
-                client, _apiSettings.Endpoints.Register, input);
-
-            if (registerResponse?.Success == true)
+            try
             {
-                var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
-                    client, _apiSettings.Endpoints.Login,
-                    new LoginUserMessage { UsernameOrEmail = input.Email, Password = input.Password });
+                var client = _httpClientFactory.CreateClient("Library.UserApi");
 
-                if (loginResponse?.Success == true && loginResponse.Data != null)
+                var registerResponse = await ApiClientHelper.PostJsonAsync<UserListMessage>(
+                    client, _apiSettings.Endpoints.Register, input);
+
+                if (registerResponse?.Success == true)
                 {
-                    await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
-                    return RedirectToAction("Index", "Home");
-                }
-            }
+                    var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
+                        client, _apiSettings.Endpoints.Login,
+                        new LoginUserMessage { UsernameOrEmail = input.Email, Password = input.Password });
 
-            ViewData["ErrorMessage"] = registerResponse?.Message ?? "Registration failed.";
-            return View(input);
+                    if (loginResponse?.Success == true && loginResponse.Data != null)
+                    {
+                        await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
+                        TempData["SuccessMessage"] = "Registration successful!";
+                        return RedirectToAction("Index", "Home");
+                    }
+                }
+
+                // Inline feedback for expected failure
+                TempData["ErrorMessage"] = registerResponse?.Message ?? "Registration failed.";
+                return View(input);
+            }
+            catch (Exception ex)
+            {
+                // Critical failure → Error view
+                ModelState.AddModelError("", ex.Message);
+                return View("Error");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginUserMessage input)
         {
-            var client = _httpClientFactory.CreateClient("Library.UserApi");
-
-            var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
-                client, _apiSettings.Endpoints.Login, input);
-
-            if (loginResponse?.Success == true && loginResponse.Data != null)
+            try
             {
-                await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
-                return RedirectToAction("Index", "Home");
-            }
+                var client = _httpClientFactory.CreateClient("Library.UserApi");
 
-            ViewData["ErrorMessage"] = loginResponse?.Message ?? "Login failed.";
-            return View(input);
+                var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
+                    client, _apiSettings.Endpoints.Login, input);
+
+                if (loginResponse?.Success == true && loginResponse.Data != null)
+                {
+                    await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
+                    TempData["SuccessMessage"] = "Login successful!";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                TempData["ErrorMessage"] = loginResponse?.Message ?? "Login failed.";
+                return View(input);
+            }
+            catch (Exception ex)
+            {
+                // Critical failure → Error view
+                ModelState.AddModelError("", ex.Message);
+                return View("Error");
+            }
         }
 
         [HttpPost]
@@ -78,6 +98,7 @@ namespace Library.UI.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            TempData["SuccessMessage"] = "You have been logged out.";
             return RedirectToAction("Login", "Account");
         }
 

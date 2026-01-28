@@ -1,6 +1,6 @@
 ﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Author;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +10,7 @@ namespace Library.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PermissionNames.AuthorManage)]
     public class AuthorsController : ControllerBase
     {
         private readonly IAuthorService _service;
@@ -19,18 +20,9 @@ namespace Library.API.Controllers
             _service = service;
         }
 
-        [AllowAnonymous]
-        [HttpGet("exception-test")]
-        public IActionResult ThrowException()
-        {
-            throw new InvalidOperationException("This is a test exception");
-        }
-
 
         [HttpPost]
-        [ProducesResponseType(400)]
         [ProducesResponseType(typeof(AuthorListDto), 201)]
-        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> CreateAuthor([FromBody] CreateAuthorDto dto, [FromQuery] int userId)
         {
             try
@@ -56,7 +48,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        [Authorize(Policy = "author.manage")]
         public IActionResult ListAuthorsQuery()
         {
             try
@@ -71,7 +62,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> GetAuthorByIdQuery(int id)
         {
             try
@@ -90,7 +80,6 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> EditAuthor(int id, [FromBody] UpdateAuthorDto dto, [FromQuery] int userId)
         {
             try
@@ -112,7 +101,6 @@ namespace Library.API.Controllers
 
 
         [HttpPut("archive/{id}")]
-        [Authorize(Policy = "author.manage")]
         public async Task<IActionResult> ArchiveAuthor(int id, [FromQuery] int userId)
         {
             try

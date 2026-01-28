@@ -14,7 +14,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Library.Common\Library.Common.csproj" />
     <ProjectReference Include="..\Library.Shared\Library.Shared.csproj" />
-    <ProjectReference Include="..\Library.UserAPI\Library.UserAPI.csproj" />
   </ItemGroup>
 
 </Project>

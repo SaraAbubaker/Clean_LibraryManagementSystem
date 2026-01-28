@@ -1,6 +1,6 @@
 ﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Category;
 using Library.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +10,8 @@ namespace Library.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+
+    [Authorize(Policy = PermissionNames.CategoryBasic)]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _service;
@@ -20,7 +22,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "category.manage")]
+        [Authorize(Policy = PermissionNames.CategoryManage)]
         public async Task<IActionResult> CreateCategory(CreateCategoryDto dto, [FromQuery] int userId)
         {
             try
@@ -35,7 +37,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        [Authorize(Policy = "category.basic")]
         public IActionResult GetAllCategoriesQuery()
         {
             try
@@ -50,7 +51,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "category.basic")]
         public IActionResult GetCategoryByIdQuery(int id)
         {
             try
@@ -69,7 +69,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut]
-        [Authorize(Policy = "category.manage")]
+        [Authorize(Policy = PermissionNames.CategoryManage)]
         public async Task<IActionResult> UpdateCategory(UpdateCategoryDto dto, [FromQuery] int userId)
         {
             try
@@ -88,7 +88,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
-        [Authorize(Policy = "category.manage")]
+        [Authorize(Policy = PermissionNames.CategoryManage)]
         public async Task<IActionResult> ArchiveCategory(int id, [FromQuery] int userId)
         {
             try

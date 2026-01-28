@@ -23,13 +23,14 @@ namespace Library.UserAPI.Services
             Validate.Positive(createdByUserId, nameof(createdByUserId));
 
             var existingAdmin = await _roleManager.Roles
-                .FirstOrDefaultAsync(r => r.Name!.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(r => r.Name!.ToLower() == "admin");
 
-            //Prevents duplication
+            // Prevents duplication
             Validate.NotNull(
-                dto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && existingAdmin != null ? null : new object(),
+                dto.Role.ToLower() == "admin" && existingAdmin != null ? null : new object(),
                 "The Admin role already exists and cannot be duplicated."
             );
+
 
             var role = new ApplicationRole
             {
@@ -83,8 +84,7 @@ namespace Library.UserAPI.Services
 
             // Prevent renaming Admin role
             Validate.NotEmpty(dto.Role, nameof(dto.Role));
-            if (role.Name!.Equals("Admin", StringComparison.OrdinalIgnoreCase) &&
-                !dto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            if (role.Name!.ToLower() == "admin" && dto.Role.ToLower() != "admin")
             {
                 throw new InvalidOperationException("The Admin role cannot be renamed or downgraded.");
             }
@@ -110,7 +110,7 @@ namespace Library.UserAPI.Services
 
             // Prevent archiving Admin role
             Validate.NotNull(
-                role.Name!.Equals("Admin", StringComparison.OrdinalIgnoreCase) ? null : new object(),
+                role.Name!.ToLower() == "admin" ? null : new object(),
                 "The Admin role cannot be archived."
             );
 

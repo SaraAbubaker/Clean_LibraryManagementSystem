@@ -1,6 +1,6 @@
 ﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Publisher;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +9,7 @@ namespace Library.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PermissionNames.PublisherBasic)]
     public class PublisherController : ControllerBase
     {
         private readonly IPublisherService _service;
@@ -20,7 +21,7 @@ namespace Library.API.Controllers
 
 
         [HttpPost]
-        [Authorize(Policy = "publisher.manage")]
+        [Authorize(Policy = PermissionNames.PublisherManage)]
         public async Task<IActionResult> CreatePubliser([FromBody] CreatePublisherDto dto, [FromQuery] int createdByUserId)
         {
             try
@@ -35,7 +36,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        [Authorize(Policy = "publisher.basic")]
         public IActionResult GetAllPublisersQuery()
         {
             try
@@ -50,7 +50,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "publisher.basic")]
         public IActionResult GetPubliserByIdQuery(int id)
         {
             try
@@ -69,7 +68,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "publisher.manage")]
+        [Authorize(Policy = PermissionNames.PublisherManage)]
         public async Task<IActionResult> UpdatePubliser([FromBody] UpdatePublisherDto dto, int id, [FromQuery] int userId)
         {
             try
@@ -83,7 +82,7 @@ namespace Library.API.Controllers
             }
         }
 
-        [Authorize(Policy = "publisher.manage")]
+        [Authorize(Policy = PermissionNames.PublisherManage)]
         [HttpPut("archive/{id}")]
         public async Task<IActionResult> ArchivePubliser(int id, [FromQuery] int? userId = null)
         {

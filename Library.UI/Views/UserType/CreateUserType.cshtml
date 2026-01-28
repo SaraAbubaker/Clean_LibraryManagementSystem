@@ -1,0 +1,44 @@
+﻿@model Library.Common.RabbitMqMessages.UserTypeMessages.CreateUserTypeMessage
+
+@{
+    ViewData["Title"] = "Create User Type";
+}
+
+<h2>Create User Type</h2>
+
+<!-- Success Message -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+        <a asp-action="Index" asp-controller="UserType" class="btn btn-primary btn-sm ms-2">Return to User Types</a>
+    </div>
+}
+
+<!-- Validation & Error Messages -->
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+<form asp-action="CreateUserType" method="post">
+    <div class="mb-3">
+        <label asp-for="Role" class="form-label"></label>
+        <input asp-for="Role" class="form-control" />
+        <span asp-validation-for="Role" class="text-danger"></span>
+    </div>
+
+    <input type="hidden" name="userId" value="@User.Claims.FirstOrDefault(c => c.Type == "user_id")?.Value" />
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="Index" asp-controller="UserType" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,5 +1,5 @@
+using Library.Common.StringConstants;
 using Library.UI.Models.String_constant;
-using Library.UserAPI.Seeder;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -66,10 +66,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 var authBuilder = builder.Services.AddAuthorizationBuilder();
-foreach (var perm in RolePermissionSeeder.Permissions)
+
+foreach (var perm in PermissionNames.All)
 {
     authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
 }
+
 
 var app = builder.Build();
 

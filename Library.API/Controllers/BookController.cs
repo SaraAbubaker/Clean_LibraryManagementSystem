@@ -1,7 +1,7 @@
 ﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.StringConstants;
 using Library.Services.Interfaces;
 using Library.Shared.DTOs;
-using Library.Shared.DTOs.ApiResponses;
 using Library.Shared.DTOs.Book;
 using Library.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +13,7 @@ namespace Library.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PermissionNames.BookBasic)]
     public class BooksController : ControllerBase
     {
         private readonly IBookService _service;
@@ -23,7 +24,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "book.manage")]
+        [Authorize(Policy = PermissionNames.BookManage)]
         public async Task<IActionResult> CreateBook([FromBody] CreateBookDto dto, [FromQuery] int userId)
         {
             try
@@ -42,7 +43,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        [Authorize(Policy = "book.basic")]
         public async Task<IActionResult> GetBookDetailsQuery(int id)
         {
             try
@@ -61,7 +61,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/author/{authorId}")]
-        [Authorize(Policy = "book.basic")]
         public IActionResult GetBooksByAuthorQuery(int authorId)
         {
             try
@@ -76,7 +75,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/category/{categoryId}")]
-        [Authorize(Policy = "book.basic")]
         public IActionResult GetBooksByCategoryQuery(int categoryId)
         {
             try
@@ -91,7 +89,6 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/search")]
-        [Authorize(Policy = "book.basic")]
         public async Task<IActionResult> SearchBooksQuery(
             [FromQuery] SearchBookParamsDto filters,
             [FromQuery] int page = 1,
@@ -118,7 +115,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "book.manage")]
+        [Authorize(Policy = PermissionNames.BookManage)]
         public async Task<IActionResult> UpdateBook(int id, UpdateBookDto dto, [FromQuery] int userId)
         {
             try
@@ -139,7 +136,7 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
-        [Authorize(Policy = "book.manage")]
+        [Authorize(Policy = PermissionNames.BookManage)]
         public async Task<IActionResult> ArchiveBook(int id, [FromQuery] int userId)
         {
             try
