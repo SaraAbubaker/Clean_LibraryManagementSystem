@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Library.Services.Interfaces;
 using Library.Domain.Repositories;
 using Library.Entities.Models;
-using Library.Shared.Helpers;
+using Library.Common.Helpers;
 
 namespace Library.Services.Services
 {

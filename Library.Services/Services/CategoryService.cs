@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Library.Shared.DTOs.Category;
 using Library.Domain.Repositories;
 using Library.Services.Interfaces;
-using Library.Shared.Exceptions;
 using Library.Entities.Models;
-using Library.Shared.Helpers;
 using Mapster;
+using Library.Common.Helpers;
+using Library.Common.Exceptions;
 
 namespace Library.Services.Services
 {

@@ -3,9 +3,9 @@ using Library.Shared.DTOs.BorrowRecord;
 using Microsoft.EntityFrameworkCore;
 using Library.Services.Interfaces;
 using Library.Domain.Repositories;
-using Library.Shared.Exceptions;
 using Library.Entities.Models;
-using Library.Shared.Helpers;
+using Library.Common.Helpers;
+using Library.Common.Exceptions;
 
 namespace Library.Services.Services
 {

@@ -1,5 +1,5 @@
 ﻿
-using Library.Shared.Helpers;
+using Library.Common.Helpers;
 using System.ComponentModel.DataAnnotations;
 
 namespace Library.Shared.DTOs.Category

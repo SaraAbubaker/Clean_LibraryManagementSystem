@@ -1,8 +1,8 @@
-﻿using Library.Common.RabbitMqMessages.LoggingMessages;
+﻿using Library.Common.Helpers;
+using Library.Common.RabbitMqMessages.LoggingMessages;
 using Library.Infrastructure.Logging.Interfaces;
 using Library.Infrastructure.Logging.Models;
 using Library.Infrastructure.Mongo;
-using Library.Shared.Helpers;
 
 namespace Library.Infrastructure.Logging.Services
 {

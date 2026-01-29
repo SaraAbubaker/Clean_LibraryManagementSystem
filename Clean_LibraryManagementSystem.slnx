@@ -13,7 +13,11 @@
     <Project Path="Library.UI/Library.UI.csproj" Id="57cf0edb-90c5-4080-8592-f012773bddee" />
   </Folder>
   <Folder Name="/Library User/">
-    <Project Path="Library.UserAPI/Library.UserAPI.csproj" Id="15566c11-6dcb-4454-8d44-13b065aaad65" />
+    <Project Path="Library.User.Domain/Library.User.Domain.csproj" Id="8aa79399-3e26-490b-b731-2498bc239446" />
+    <Project Path="Library.User.Entities/Library.User.Entities.csproj" Id="dc8d00ac-c64a-4d32-b98b-c8f51b341110" />
+    <Project Path="Library.User.Seeder/Library.User.Seeder.csproj" Id="0bf6908a-12ef-4777-82f0-87e349aa552c" />
+    <Project Path="Library.User.Services/Library.User.Services.csproj" Id="a2ffea4f-4bd3-4396-a534-7613db6c2955" />
+    <Project Path="Library.User.API/Library.User.API.csproj" Id="15566c11-6dcb-4454-8d44-13b065aaad65" />
   </Folder>
   <Project Path="Library.Common/Library.Common.csproj" Id="54806eb9-bf2b-4069-9bb5-e552dd28d0ad" />
 </Solution>

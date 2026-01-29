@@ -1,10 +1,9 @@
-﻿
-using Library.Shared.Helpers;
-using Microsoft.AspNetCore.Mvc.Controllers;
+﻿using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Text;
 using System.Text.Json;
 using MassTransit;
 using Library.Common.RabbitMqMessages.LoggingMessages;
+using Library.Common.Helpers;
 
 namespace Library.API.Middleware
 {

@@ -1,8 +1,8 @@
-﻿using Library.Common.RabbitMqMessages.ApiResponses;
+﻿using Library.Common.Exceptions;
+using Library.Common.RabbitMqMessages.ApiResponses;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
 using Library.Shared.DTOs.Category;
-using Library.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
