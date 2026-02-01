@@ -1,6 +1,8 @@
 using Library.Common.StringConstants;
 using Library.UI.Models.String_constant;
+using Library.UI.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -21,13 +23,19 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;              // bypass consent
 });
 
-var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
-    ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured.");
+builder.Services.AddHttpClient("Library.UserApi")
+    .ConfigureHttpClient((sp, client) =>
+    {
+        var apiSettings = sp
+            .GetRequiredService<IOptions<ApiSettings>>()
+            .Value;
 
-builder.Services.AddHttpClient("Library.UserApi", client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+        client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    });
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IApiClient, ApiClient>();
+
 
 // Configure authentication with both Cookies and JWT
 builder.Services.AddAuthentication(options =>

@@ -1,6 +1,7 @@
 
 using Library.API.Consuming;
 using Library.Common.RabbitMqMessages.LoggingMessages;
+using Library.Common.StringConstants;
 using Library.Domain.Data;
 using Library.Domain.Repositories;
 using Library.Infrastructure.Logging.Interfaces;
@@ -101,6 +102,14 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+// Authorization policies
+var authBuilder = builder.Services.AddAuthorizationBuilder();
+
+//Automatically add one policy per permission from shared constants
+foreach (var perm in PermissionNames.All)
+{
+    authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
+}
 
 var app = builder.Build();
 

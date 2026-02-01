@@ -2,12 +2,18 @@
 {
     public static class ApiUrlBuilder
     {
+        private static string Normalize(string path)
+            => path.TrimEnd('/');
+
         public static string ForQuery(string basePath)
-            => $"{basePath}/query";
+            => $"{Normalize(basePath)}/query";
 
         public static string ForId(string basePath, int id, int? userId = null)
-            => userId.HasValue
-                ? $"{basePath}/{id}?userId={userId}"
-                : $"{basePath}/{id}";
+        {
+            var path = $"{Normalize(basePath)}/{id}";
+            return userId.HasValue
+                ? $"{path}?userId={userId}"
+                : path;
+        }
     }
 }

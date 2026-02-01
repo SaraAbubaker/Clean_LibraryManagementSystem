@@ -1,39 +1,52 @@
-﻿using System.Text;
+﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using System.Text;
 using System.Text.Json;
-using Library.Common.RabbitMqMessages.ApiResponses;
 
 namespace Library.UI.Helpers
 {
     public static class ApiClientHelper
     {
-        public static async Task<ApiResponse<T>> PostJsonAsync<T>(
-            HttpClient client, string url, object payload)
+        public static async Task<ApiResponse<T>> PostJsonAsync<T>(HttpClient client, string url, object payload)
         {
+
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync(url, content);
-
-            if (!response.IsSuccessStatusCode)
+            HttpResponseMessage response;
+            try
+            {
+                response = await client.PostAsync(url, content);
+            }
+            catch (Exception ex)
             {
                 return new ApiResponse<T>
                 {
                     Success = false,
-                    Message = $"HTTP {response.StatusCode}"
+                    Data = default,
+                    Message = $"Network error: {ex.Message}"
                 };
             }
 
             var body = await response.Content.ReadAsStringAsync();
 
-            try
+            // Deserialize API response, fallback to default ApiResponse if null
+            var result = JsonSerializer.Deserialize<ApiResponse<T>>(body,
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                         ?? new ApiResponse<T>
+                         {
+                             Success = false,
+                             Data = default,
+                             Message = $"Invalid server response: {response.StatusCode}"
+                         };
+
+            // If HTTP request failed but message is empty, mark as failed
+            if (!response.IsSuccessStatusCode && string.IsNullOrEmpty(result.Message))
             {
-                return JsonSerializer.Deserialize<ApiResponse<T>>(body)
-                    ?? new ApiResponse<T> { Success = false, Message = "Empty or invalid response" };
+                result.Success = false;
+                result.Message = $"Request failed: {response.StatusCode}";
             }
-            catch (JsonException ex)
-            {
-                return new ApiResponse<T> { Success = false, Message = $"Invalid JSON: {ex.Message}" };
-            }
+
+            return result;
         }
     }
 }

@@ -49,19 +49,19 @@ namespace Library.User.API.Controllers
             try
             {
                 var loginResult = await _service.LoginUserAsync(dto);
-                return Ok(ApiResponseHelper.Success(loginResult));
+                return Ok(ApiResponseHelper.Success(loginResult)); // Success wraps LoginUserResponseMessage
             }
             catch (BadRequestException ex)
             {
-                return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>(ex.Message));
+                return Unauthorized(ApiResponseHelper.Failure<LoginUserResponseMessage>(ex.Message)); // ❌ Fix type here
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(ApiResponseHelper.Failure<LoginUserMessage>(ex.Message));
+                return Unauthorized(ApiResponseHelper.Failure<LoginUserResponseMessage>(ex.Message)); // ❌ Fix type here
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponseHelper.Failure<LoginUserMessage>(ex.Message));
+                return BadRequest(ApiResponseHelper.Failure<LoginUserResponseMessage>(ex.Message)); // ❌ Fix type here
             }
         }
 

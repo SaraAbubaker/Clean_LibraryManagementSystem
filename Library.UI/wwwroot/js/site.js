@@ -14,6 +14,17 @@
         actionMessage.classList.add(success ? "alert-success" : "alert-danger");
     }
 
+    // Helper to close modal and clean up backdrop
+    function closeModal(modalEl) {
+        const instance = bootstrap.Modal.getInstance(modalEl);
+        if (instance) {
+            instance.hide();
+        }
+        // Ensure backdrop and body class are removed immediately
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+    }
+
     /* ================= CREATE ================= */
 
     const createBtn = document.getElementById("createUserTypeBtn");
@@ -30,9 +41,9 @@
     const updateRoleInput = document.getElementById("updateRole");
     const updateUserTypeIdInput = document.getElementById("updateUserTypeId");
 
-    const updateModal = updateModalEl
-        ? new bootstrap.Modal(updateModalEl)
-        : null;
+    if (!updateModalEl) return;
+    // Always create one modal instance
+    const updateModal = new bootstrap.Modal(updateModalEl);
 
     document.querySelectorAll(".update-btn").forEach(btn => {
         btn.addEventListener("click", function (e) {
@@ -55,6 +66,11 @@
         const id = parseInt(updateUserTypeIdInput.value);
         const role = updateRoleInput.value.trim();
 
+        if (!role) {
+            showMessage("Role is required", false);
+            return;
+        }
+
         fetch("/UserType/UpdateUserType", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -65,7 +81,7 @@
                 if (data.success) {
                     document.querySelector(`#userTypeRow-${id} .role`).textContent = role;
                     showMessage(data.message, true);
-                    updateModal.hide();
+                    closeModal(updateModalEl);
                 } else {
                     showMessage(data.message, false);
                 }
@@ -98,7 +114,7 @@
             .then(data => {
                 if (data.success) {
                     document.getElementById(`userTypeRow-${id}`)?.remove();
-                    bootstrap.Modal.getInstance(archiveModalEl).hide();
+                    closeModal(archiveModalEl);
                     showMessage(data.message, true);
                 } else {
                     showMessage(data.message, false);

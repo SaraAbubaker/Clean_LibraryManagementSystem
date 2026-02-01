@@ -1,6 +1,8 @@
-﻿using Library.Common.RabbitMqMessages.UserMessages;
+﻿using Library.Common.RabbitMqMessages.ApiResponses;
+using Library.Common.RabbitMqMessages.UserMessages;
 using Library.UI.Helpers;
 using Library.UI.Models.String_constant;
+using Library.UI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -12,87 +14,104 @@ namespace Library.UI.Controllers
     [AllowAnonymous]
     public class AccountController : Controller
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IApiClient _apiClient;
         private readonly ApiSettings _apiSettings;
 
-        public AccountController(IHttpClientFactory httpClientFactory, IOptions<ApiSettings> apiSettings)
+        public AccountController(
+            IApiClient apiClient,
+            IOptions<ApiSettings> apiSettings)
         {
-            _httpClientFactory = httpClientFactory;
+            _apiClient = apiClient;
             _apiSettings = apiSettings.Value;
         }
 
+        // GET: /Account/Register
         [HttpGet]
         public IActionResult Register() => View();
 
+        // GET: /Account/Login
         [HttpGet]
-        public IActionResult Login() => View();
+        public IActionResult Login() => View(new LoginUserMessage());
 
+        // POST: /Account/Register
         [HttpPost]
         public async Task<IActionResult> Register(RegisterUserMessage input)
         {
-            if (!ModelState.IsValid) return View(input);
+            if (!ModelState.IsValid)
+                return View(input);
 
             try
             {
-                var client = _httpClientFactory.CreateClient("Library.UserApi");
+                // Call register endpoint via generic API client (expect ApiResponse to get error message)
+                var registerResponse = await _apiClient.PostAsync<RegisterUserMessage, ApiResponse<UserListMessage>>(
+                    _apiSettings.Endpoints.Register, input);
 
-                var registerResponse = await ApiClientHelper.PostJsonAsync<UserListMessage>(
-                    client, _apiSettings.Endpoints.Register, input);
-
-                if (registerResponse?.Success == true)
+                if (registerResponse == null)
                 {
-                    var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
-                        client, _apiSettings.Endpoints.Login,
-                        new LoginUserMessage { UsernameOrEmail = input.Email, Password = input.Password });
-
-                    if (loginResponse?.Success == true && loginResponse.Data != null)
-                    {
-                        await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
-                        TempData["SuccessMessage"] = "Registration successful!";
-                        return RedirectToAction("Index", "Home");
-                    }
+                    ViewBag.LoginError = "Authentication service unavailable. Please try again later.";
+                    return View(input);
                 }
 
-                // Inline feedback for expected failure
-                TempData["ErrorMessage"] = registerResponse?.Message ?? "Registration failed.";
+                if (registerResponse.Success && registerResponse.Data != null && !string.IsNullOrEmpty(registerResponse.Data.Token))
+                {
+                    // Automatically log in using the returned token
+                    await SignInHelper.SignInWithJwtAsync(HttpContext, registerResponse.Data.Token);
+                    TempData["SuccessMessage"] = "Registration successful!";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Map API-provided error message to specific fields like Login does
+                ApiErrorMapper.MapRegisterErrorToModelState(ModelState, registerResponse.Message, input);
+
                 return View(input);
             }
             catch (Exception ex)
             {
-                // Critical failure → Error view
-                ModelState.AddModelError("", ex.Message);
-                return View("Error");
+                ViewBag.LoginError = ex.Message;
+                return View(input);
             }
         }
 
+        // POST: /Account/Login
         [HttpPost]
         public async Task<IActionResult> Login(LoginUserMessage input)
         {
+            if (!ModelState.IsValid)
+                return View(input);
+
             try
             {
-                var client = _httpClientFactory.CreateClient("Library.UserApi");
+                var apiResponse = await _apiClient.PostAsync<LoginUserMessage, ApiResponse<LoginUserResponseMessage>>(
+                    _apiSettings.Endpoints.Login, input);
 
-                var loginResponse = await ApiClientHelper.PostJsonAsync<LoginUserResponseMessage>(
-                    client, _apiSettings.Endpoints.Login, input);
-
-                if (loginResponse?.Success == true && loginResponse.Data != null)
+                // Defensive: PostAsync can return null on transport/deserialization failure.
+                if (apiResponse == null)
                 {
-                    await SignInHelper.SignInWithJwtAsync(HttpContext, loginResponse.Data.AccessToken);
+                    ModelState.AddModelError(string.Empty, "Authentication service unavailable. Please try again later.");
+                    return View(input);
+                }
+
+                if (apiResponse.Success && apiResponse.Data != null)
+                {
+                    // Successful login — sign in with JWT
+                    await SignInHelper.SignInWithJwtAsync(HttpContext, apiResponse.Data.AccessToken);
                     TempData["SuccessMessage"] = "Login successful!";
                     return RedirectToAction("Index", "Home");
                 }
 
-                TempData["ErrorMessage"] = loginResponse?.Message ?? "Login failed.";
+                // Failed login — map API error message to correct field
+                ApiErrorMapper.MapLoginErrorToModelState(ModelState, apiResponse.Message, input);
+
                 return View(input);
             }
             catch (Exception ex)
             {
-                // Critical failure → Error view
-                ModelState.AddModelError("", ex.Message);
-                return View("Error");
+                ModelState.AddModelError(string.Empty, $"Unexpected error: {ex.Message}");
+                return View(input);
             }
         }
 
+        // POST: /Account/Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -102,11 +121,13 @@ namespace Library.UI.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        // GET: /Account/AccessDenied
         [HttpGet]
         public IActionResult AccessDenied(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
+
     }
 }

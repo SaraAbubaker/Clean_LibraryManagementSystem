@@ -17,13 +17,23 @@
 
     <div class="mb-3">
         <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" type="password" class="form-control" />
+        <div class="position-relative">
+            <input asp-for="Password" type="password" class="form-control" id="passwordInput" />
+            <i class="fa-regular fa-eye" id="togglePassword"
+               style="position:absolute; right:17px; top:50%; transform:translateY(-50%);
+                      cursor:pointer; color:#000; transition: opacity 0.15s ease, color 0.15s ease;"></i>
+        </div>
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
         <label asp-for="ConfirmPassword" class="form-label"></label>
-        <input asp-for="ConfirmPassword" type="password" class="form-control" />
+        <div class="position-relative">
+            <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmPasswordInput" />
+            <i class="fa-regular fa-eye" id="toggleConfirmPassword"
+               style="position:absolute; right:17px; top:50%; transform:translateY(-50%);
+                      cursor:pointer; color:#000; transition: opacity 0.15s ease, color 0.15s ease;"></i>
+        </div>
         <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
     </div>
 
@@ -42,4 +52,30 @@
 @if (ViewData["ErrorMessage"] != null)
 {
     <p class="text-danger">@ViewData["ErrorMessage"]</p>
+}
+
+@section Scripts {
+    <script>
+        const setupToggle = (toggleSelector, inputSelector) => {
+            const toggle = document.querySelector(toggleSelector);
+            const input = document.querySelector(inputSelector);
+            if (!toggle || !input) return;
+
+            toggle.addEventListener("click", () => {
+                const type = input.getAttribute("type") === "password" ? "text" : "password";
+                input.setAttribute("type", type);
+
+                toggle.style.opacity = 0;
+                setTimeout(() => {
+                    toggle.className = type === "password"
+                        ? "fa-regular fa-eye"
+                        : "fa-solid fa-eye";
+                    toggle.style.opacity = 1;
+                }, 150);
+            });
+        };
+
+        setupToggle("#togglePassword", "#passwordInput");
+        setupToggle("#toggleConfirmPassword", "#confirmPasswordInput");
+    </script>
 }

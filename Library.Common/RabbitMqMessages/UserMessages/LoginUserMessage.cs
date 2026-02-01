@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Library.Common.RabbitMqMessages.UserMessages
 {
@@ -9,5 +10,6 @@ namespace Library.Common.RabbitMqMessages.UserMessages
 
         [Required]
         public string Password { get; set; } = string.Empty;
+
     }
 }
