@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace Library.UI.Controllers
+namespace Library.UI.Controllers.UserControllers
 {
     [AllowAnonymous]
     public class AccountController : Controller
