@@ -3,9 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using Library.Services.Interfaces;
 using Library.Domain.Repositories;
-using Library.Shared.DTOs.Book;
 using Library.Entities.Models;
-using Library.Shared.DTOs;
 using Mapster;
 using Library.Common.Helpers;
 using Library.Common.DTOs.LibraryDtos.Book;
@@ -29,7 +27,7 @@ namespace Library.Services.Services
         public async Task<Book> CreateBookAsync(CreateBookDto dto, int currentUserId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(currentUserId, nameof(currentUserId));
+            ValidationHelpers.ValidatePositive(currentUserId, nameof(currentUserId));
 
             var book = dto.Adapt<Book>();
 
@@ -59,7 +57,7 @@ namespace Library.Services.Services
 
         public IQueryable<BookListDto?> GetBookDetailsQuery(int bookId)
         {
-            Validate.Positive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
 
             return _bookRepo.GetAll()
                 .Include(b => b.Author)
@@ -82,7 +80,7 @@ namespace Library.Services.Services
 
         public IQueryable<BookListDto> GetBooksByAuthorQuery(int authorId)
         {
-            Validate.Positive(authorId, nameof(authorId));
+            ValidationHelpers.ValidatePositive(authorId, nameof(authorId));
 
             return _bookRepo.GetAll()
                 .Include(b => b.Author)
@@ -106,7 +104,7 @@ namespace Library.Services.Services
 
         public IQueryable<BookListDto> GetBooksByCategoryQuery(int categoryId)
         {
-            Validate.Positive(categoryId, nameof(categoryId));
+            ValidationHelpers.ValidatePositive(categoryId, nameof(categoryId));
 
             return _bookRepo.GetAll()
                 .Include(b => b.Author)
@@ -130,7 +128,7 @@ namespace Library.Services.Services
         public async Task<bool> UpdateBookAsync(UpdateBookDto dto, int currentUserId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(currentUserId, nameof(currentUserId));
+            ValidationHelpers.ValidatePositive(currentUserId, nameof(currentUserId));
 
             var book = Validate.Exists(
                 await _bookRepo.GetAll()
@@ -154,8 +152,8 @@ namespace Library.Services.Services
 
         public async Task<bool> ArchiveBookAsync(int bookId, int performedByUserId)
         {
-            Validate.Positive(bookId, nameof(bookId));
-            Validate.Positive(performedByUserId, nameof(performedByUserId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(performedByUserId, nameof(performedByUserId));
 
             var book = Validate.Exists(
                 await _bookRepo.GetAll()

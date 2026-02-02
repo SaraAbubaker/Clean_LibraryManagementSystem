@@ -4,8 +4,7 @@ using Library.Common.DTOs.LibraryDtos.Book;
 using Library.Common.Exceptions;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs;
-using Library.Shared.DTOs.Book;
+using Library.Common.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,16 +26,22 @@ namespace Library.API.Controllers
 
         [HttpPost]
         [Authorize(Policy = PermissionNames.BookManage)]
-        public async Task<IActionResult> CreateBook([FromBody] CreateBookDto dto, [FromQuery] int userId)
+        public async Task<IActionResult> CreateBook([FromBody] CreateBookDto dto)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var book = await _service.CreateBookAsync(dto, userId);
+
                 return CreatedAtAction(
                     nameof(GetBookDetailsQuery),
                     new { id = book.Id },
                     ApiResponseHelper.Success(book)
                 );
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -50,7 +55,8 @@ namespace Library.API.Controllers
             try
             {
                 var query = _service.GetBookDetailsQuery(id);
-                var book = await query.FirstOrDefaultAsync(); // Execute query
+                var book = await query.FirstOrDefaultAsync();
+
                 if (book == null)
                     return NotFound(ApiResponseHelper.Failure<BookListDto>("Book not found"));
 
@@ -90,6 +96,7 @@ namespace Library.API.Controllers
             }
         }
 
+        //Search books with filters, paging, and sorting
         [HttpGet("query/search")]
         public async Task<IActionResult> SearchBooksQuery(
             [FromQuery] SearchBookParamsDto filters,
@@ -118,18 +125,24 @@ namespace Library.API.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = PermissionNames.BookManage)]
-        public async Task<IActionResult> UpdateBook(int id, UpdateBookDto dto, [FromQuery] int userId)
+        public async Task<IActionResult> UpdateBook(int id, UpdateBookDto dto)
         {
             try
             {
                 if (id != dto.Id)
                     return BadRequest(ApiResponseHelper.Failure<UpdateBookDto>("ID mismatch."));
 
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var success = await _service.UpdateBookAsync(dto, userId);
+
                 if (!success)
                     return NotFound(ApiResponseHelper.Failure<UpdateBookDto>("Book not found."));
 
                 return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -139,11 +152,13 @@ namespace Library.API.Controllers
 
         [HttpPut("archive/{id}")]
         [Authorize(Policy = PermissionNames.BookManage)]
-        public async Task<IActionResult> ArchiveBook(int id, [FromQuery] int userId)
+        public async Task<IActionResult> ArchiveBook(int id)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var success = await _service.ArchiveBookAsync(id, userId);
+
                 if (!success)
                     return NotFound(ApiResponseHelper.Failure<BookListDto>("Book not found."));
 
@@ -151,6 +166,10 @@ namespace Library.API.Controllers
                 var book = await query.FirstOrDefaultAsync();
 
                 return Ok(ApiResponseHelper.Success(book));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (NotFoundException)
             {

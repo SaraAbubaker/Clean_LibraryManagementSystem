@@ -3,15 +3,17 @@ using Library.Common.DTOs.LibraryDtos.Category;
 using Library.Common.Exceptions;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.Category;
+using Library.Common.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Library.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-
     [Authorize(Policy = PermissionNames.CategoryBasic)]
     public class CategoryController : ControllerBase
     {
@@ -24,12 +26,18 @@ namespace Library.API.Controllers
 
         [HttpPost]
         [Authorize(Policy = PermissionNames.CategoryManage)]
-        public async Task<IActionResult> CreateCategory(CreateCategoryDto dto, [FromQuery] int userId)
+        public async Task<IActionResult> CreateCategory(CreateCategoryDto dto)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var created = await _service.CreateCategoryAsync(dto, userId);
+
                 return Ok(ApiResponseHelper.Success(created));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -71,16 +79,21 @@ namespace Library.API.Controllers
 
         [HttpPut]
         [Authorize(Policy = PermissionNames.CategoryManage)]
-        public async Task<IActionResult> UpdateCategory(UpdateCategoryDto dto, [FromQuery] int userId)
+        public async Task<IActionResult> UpdateCategory(UpdateCategoryDto dto)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var updated = await _service.UpdateCategoryAsync(dto, userId);
 
                 if (updated == null)
                     return NotFound(ApiResponseHelper.Failure<UpdateCategoryDto>("Category not found."));
 
                 return Ok(ApiResponseHelper.Success(updated));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -90,16 +103,21 @@ namespace Library.API.Controllers
 
         [HttpPut("archive/{id}")]
         [Authorize(Policy = PermissionNames.CategoryManage)]
-        public async Task<IActionResult> ArchiveCategory(int id, [FromQuery] int userId)
+        public async Task<IActionResult> ArchiveCategory(int id)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var success = await _service.ArchiveCategoryAsync(id, userId);
 
                 if (!success)
                     return NotFound(ApiResponseHelper.Failure<CategoryListDto>("Category not found."));
 
                 return Ok(ApiResponseHelper.Success(new { Message = "Category archived successfully." }));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (ConflictException ex)
             {

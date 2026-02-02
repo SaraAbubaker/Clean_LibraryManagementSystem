@@ -1,8 +1,8 @@
 ﻿using Library.Common.DTOs.ApiResponseDtos;
 using Library.Common.DTOs.LibraryDtos.BorrowRecord;
+using Library.Common.Helpers;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.BorrowRecord;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,12 +21,17 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("borrow")]
-        public async Task<IActionResult> BorrowBook(RequestBorrowDto dto, [FromQuery] int userId)
+        public async Task<IActionResult> BorrowBook(RequestBorrowDto dto)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var borrow = await _service.BorrowBookAsync(dto, userId);
                 return Ok(ApiResponseHelper.Success(borrow));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -35,15 +40,21 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("return/{borrowRecordId}")]
-        public async Task<IActionResult> ReturnBook(int borrowRecordId, [FromQuery] int userId)
+        public async Task<IActionResult> ReturnBook(int borrowRecordId)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var success = await _service.ReturnBookAsync(borrowRecordId, userId);
+
                 if (!success)
                     return NotFound(ApiResponseHelper.Failure<object>("Borrow record not found"));
 
                 return Ok(ApiResponseHelper.Success(new { Message = "Book returned successfully." }));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {

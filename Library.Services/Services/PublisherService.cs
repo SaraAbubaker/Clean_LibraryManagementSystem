@@ -1,6 +1,5 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
-using Library.Shared.DTOs.Publisher;
 using Library.Services.Interfaces;
 using Library.Domain.Repositories;
 using Library.Entities.Models;
@@ -24,7 +23,7 @@ namespace Library.Services.Services
         public async Task<PublisherListDto> CreatePublisherAsync(CreatePublisherDto dto, int createdByUserId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(createdByUserId, nameof(createdByUserId));
+            ValidationHelpers.ValidatePositive(createdByUserId, nameof(createdByUserId));
 
             var publisher = new Publisher
             {
@@ -55,7 +54,7 @@ namespace Library.Services.Services
 
         public IQueryable<PublisherListDto> GetPublisherByIdQuery(int id)
         {
-            Validate.Positive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
 
             return _publisherRepo.GetAll()
                 .Include(p => p.InventoryRecords)
@@ -72,8 +71,8 @@ namespace Library.Services.Services
         public async Task<PublisherListDto> UpdatePublisherAsync(UpdatePublisherDto dto, int userId, int publisherId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(publisherId, nameof(publisherId));
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(publisherId, nameof(publisherId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var publisher = Validate.Exists(
                 await _publisherRepo.GetById(publisherId)
@@ -94,8 +93,8 @@ namespace Library.Services.Services
 
         public async Task<bool> ArchivePublisherAsync(int id, int archivedByUserId)
         {
-            Validate.Positive(id, nameof(id));
-            Validate.Positive(archivedByUserId, nameof(archivedByUserId));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(archivedByUserId, nameof(archivedByUserId));
 
             var publisher = Validate.Exists(
                 await _publisherRepo.GetById(id)

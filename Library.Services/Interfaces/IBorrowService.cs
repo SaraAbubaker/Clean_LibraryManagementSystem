@@ -1,6 +1,5 @@
 ﻿using Library.Common.DTOs.LibraryDtos.BorrowRecord;
 using Library.Entities.Models;
-using Library.Shared.DTOs.BorrowRecord;
 
 namespace Library.Services.Interfaces
 {

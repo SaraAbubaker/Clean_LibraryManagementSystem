@@ -5,11 +5,6 @@ using System.Reflection;
 
 namespace Library.Common.Helpers
 {
-    [AttributeUsage(AttributeTargets.Property)]
-    public class PositiveAttribute : Attribute
-    {
-    }
-
     public static class Validate
     {
         public static void NotNull(object? value, string name)
@@ -22,12 +17,6 @@ namespace Library.Common.Helpers
         {
             if (string.IsNullOrWhiteSpace(value))
                 throw new BadRequestException($"{name} is required.");
-        }
-
-        public static void Positive(int value, string name)
-        {
-            if (value <= 0)
-                throw new BadRequestException($"{name} must be greater than zero.");
         }
 
         public static T Exists<T>(T? entity, int id)

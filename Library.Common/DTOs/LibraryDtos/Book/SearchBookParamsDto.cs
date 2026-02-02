@@ -4,12 +4,12 @@ namespace Library.Common.DTOs.LibraryDtos.Book
 {
     public class SearchBookParamsDto
     {
-        [MaxLength(100, ErrorMessage = "Title cannot exceed 100 characters.")]
+        [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters.")]
         public string? Title { get; set; }
         public string? PublishYearOrDate { get; set; }
 
 
-        [MaxLength(50, ErrorMessage = "Author name cannot exceed 50 characters.")]
+        [MaxLength(150, ErrorMessage = "Author name cannot exceed 150 characters.")]
         public string? AuthorName { get; set; }
 
 

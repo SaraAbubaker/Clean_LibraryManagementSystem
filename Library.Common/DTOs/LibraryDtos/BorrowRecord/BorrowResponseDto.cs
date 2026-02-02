@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace Library.Common.DTOs.LibraryDtos.BorrowRecord
 {
     public class BorrowResponseDto
@@ -10,5 +7,6 @@ namespace Library.Common.DTOs.LibraryDtos.BorrowRecord
         public int InventoryRecordId { get; set; }
         public DateOnly BorrowDate { get; set; }
         public DateOnly DueDate { get; set; }
+        public DateOnly? ReturnDate { get; set; }
     }
 }

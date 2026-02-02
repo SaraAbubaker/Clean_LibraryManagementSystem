@@ -1,5 +1,4 @@
 ﻿
-using Library.Shared.DTOs.BorrowRecord;
 using Microsoft.EntityFrameworkCore;
 using Library.Services.Interfaces;
 using Library.Domain.Repositories;
@@ -57,13 +56,13 @@ namespace Library.Services.Services
         //Availability
         public async Task<bool> HasAvailableCopyAsync(int bookId)
         {
-            Validate.Positive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
             return _inventoryService.GetAvailableCopiesQuery(bookId).Any();
         }
 
         public IQueryable<InventoryRecord> GetAvailableCopiesQuery(int bookId)
         {
-            Validate.Positive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
 
             return _inventoryRepo.GetAll()
                 .AsNoTracking()
@@ -74,7 +73,7 @@ namespace Library.Services.Services
         public async Task<BorrowResponseDto> BorrowBookAsync(RequestBorrowDto dto, int userId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var copy = await _inventoryService
                 .GetAvailableCopiesQuery(dto.BookId)
@@ -111,8 +110,8 @@ namespace Library.Services.Services
 
         public async Task<bool> ReturnBookAsync(int borrowRecordId, int currentUserId)
         {
-            Validate.Positive(borrowRecordId, nameof(borrowRecordId));
-            Validate.Positive(currentUserId, nameof(currentUserId));
+            ValidationHelpers.ValidatePositive(borrowRecordId, nameof(borrowRecordId));
+            ValidationHelpers.ValidatePositive(currentUserId, nameof(currentUserId));
 
             var record = Validate.Exists(
                 await _borrowRepo.GetById(borrowRecordId).FirstOrDefaultAsync(),

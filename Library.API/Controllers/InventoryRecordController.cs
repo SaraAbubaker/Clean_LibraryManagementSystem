@@ -1,8 +1,11 @@
 ﻿using Library.Common.DTOs.ApiResponseDtos;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
+using Library.Common.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Library.API.Controllers
 {
@@ -19,12 +22,17 @@ namespace Library.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateCopy(int bookId, [FromQuery] int userId)
+        public async Task<IActionResult> CreateCopy(int bookId)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var record = await _service.CreateCopyAsync(bookId, userId);
                 return Ok(ApiResponseHelper.Success(record));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -33,16 +41,21 @@ namespace Library.API.Controllers
         }
 
         [HttpPost("return/{inventoryRecordId}")]
-        public async Task<IActionResult> ReturnCopy(int inventoryRecordId, [FromQuery] int userId)
+        public async Task<IActionResult> ReturnCopy(int inventoryRecordId)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var success = await _service.ReturnCopyAsync(inventoryRecordId, userId);
 
                 if (!success)
                     return NotFound(ApiResponseHelper.Failure<object>("Inventory record not found."));
 
                 return Ok(ApiResponseHelper.Success(new { Message = "Copy returned successfully." }));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -79,16 +92,21 @@ namespace Library.API.Controllers
         }
 
         [HttpPut("archive/{id}")]
-        public async Task<IActionResult> ArchiveCopy(int id, [FromQuery] int userId)
+        public async Task<IActionResult> ArchiveCopy(int id)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var success = await _service.ArchiveCopyAsync(id, userId);
 
                 if (!success)
                     return BadRequest(ApiResponseHelper.Failure<object>("Copy cannot be removed (may be borrowed or not found)."));
 
                 return Ok(ApiResponseHelper.Success(new { Message = "Copy removed successfully." }));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {

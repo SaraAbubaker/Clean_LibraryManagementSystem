@@ -26,8 +26,8 @@ namespace Library.Services.Services
         //Create, Remove, Read
         public async Task<InventoryRecord> CreateCopyAsync(int bookId, int createdByUserId)
         {
-            Validate.Positive(bookId, nameof(bookId));
-            Validate.Positive(createdByUserId, nameof(createdByUserId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(createdByUserId, nameof(createdByUserId));
 
             var book = Validate.Exists(
                 await _bookRepo
@@ -66,7 +66,7 @@ namespace Library.Services.Services
 
         public IQueryable<InventoryRecord> ListCopiesForBookQuery(int bookId)
         {
-            Validate.Positive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
 
             return _inventoryRepo.GetAll()
                 .AsNoTracking()
@@ -76,7 +76,7 @@ namespace Library.Services.Services
 
         public IQueryable<InventoryRecord> GetAvailableCopiesQuery(int bookId)
         {
-            Validate.Positive(bookId, nameof(bookId));
+            ValidationHelpers.ValidatePositive(bookId, nameof(bookId));
 
             return _inventoryRepo.GetAll()
                 .AsNoTracking()
@@ -86,8 +86,8 @@ namespace Library.Services.Services
         //Available = true + audit fields set
         public async Task<bool> ReturnCopyAsync(int inventoryRecordId, int currentUserId)
         {
-            Validate.Positive(inventoryRecordId, nameof(inventoryRecordId));
-            Validate.Positive(currentUserId, nameof(currentUserId));
+            ValidationHelpers.ValidatePositive(inventoryRecordId, nameof(inventoryRecordId));
+            ValidationHelpers.ValidatePositive(currentUserId, nameof(currentUserId));
 
             var copy = Validate.Exists(
                 await _inventoryRepo.GetById(inventoryRecordId).FirstOrDefaultAsync(),
@@ -103,8 +103,8 @@ namespace Library.Services.Services
         //Archive
         public async Task<bool> ArchiveCopyAsync(int inventoryRecordId, int performedByUserId)
         {
-            Validate.Positive(inventoryRecordId, nameof(inventoryRecordId));
-            Validate.Positive(performedByUserId, nameof(performedByUserId));
+            ValidationHelpers.ValidatePositive(inventoryRecordId, nameof(inventoryRecordId));
+            ValidationHelpers.ValidatePositive(performedByUserId, nameof(performedByUserId));
 
             var copy = Validate.Exists(
                 await _inventoryRepo.GetById(inventoryRecordId).FirstOrDefaultAsync(),

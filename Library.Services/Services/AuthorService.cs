@@ -5,7 +5,6 @@ using Library.Common.Helpers;
 using Library.Domain.Repositories;
 using Library.Entities.Models;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.Author;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +27,7 @@ namespace Library.Services.Services
         {
 
             Validate.ValidateModel(dto);
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var name = dto.Name.Trim();
             var email = dto.Email?.Trim();
@@ -76,7 +75,7 @@ namespace Library.Services.Services
 
         public IQueryable<AuthorListDto> GetAuthorByIdQuery(int id)
         {
-            Validate.Positive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
 
 
             return _authorRepo.GetAll()
@@ -95,7 +94,7 @@ namespace Library.Services.Services
         public async Task<bool> EditAuthorAsync(UpdateAuthorDto dto, int userId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var name = (dto.Name ?? string.Empty).Trim();
             Validate.NotEmpty(name, nameof(dto.Name));
@@ -126,8 +125,8 @@ namespace Library.Services.Services
 
         public async Task<bool> ArchiveAuthorAsync(int id, int performedByUserId)
         {
-            Validate.Positive(id, nameof(id));
-            Validate.Positive(performedByUserId, nameof(performedByUserId));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(performedByUserId, nameof(performedByUserId));
 
             var author = Validate.Exists(
                 await _authorRepo.GetAll()

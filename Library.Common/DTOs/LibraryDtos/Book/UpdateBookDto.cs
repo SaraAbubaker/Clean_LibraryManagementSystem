@@ -1,17 +1,19 @@
 ﻿using Library.Common.Helpers;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Library.Common.DTOs.LibraryDtos.Book
 {
-    public class UpdateBookDto
+    public class UpdateBookDto : IValidatableObject
     {
         [Required]
         [Positive]
         public int Id { get; set; }
 
-        [StringLength(200)]
+        [StringLength(200, MinimumLength = 1)]
         public string? Title { get; set; }
         public DateOnly? PublishDate { get; set; }
+        [RegularExpression(@"^\d+(\.\d+){0,2}$", ErrorMessage = "Version must be in format 1.0 or 1.0.0")]
         [StringLength(50)]
         public string? Version { get; set; }
 
@@ -21,5 +23,13 @@ namespace Library.Common.DTOs.LibraryDtos.Book
         public int? AuthorId { get; set; }
         [Positive]
         public int? CategoryId { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (PublishDate.HasValue && PublishDate.Value > DateOnly.FromDateTime(DateTime.UtcNow))
+            {
+                yield return new ValidationResult("Publish date cannot be in the future.", new[] { nameof(PublishDate) });
+            }
+        }
     }
 }

@@ -2,9 +2,12 @@
 using Library.Common.DTOs.LibraryDtos.Publisher;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
-using Library.Shared.DTOs.Publisher;
+using Library.Common.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Library.API.Controllers
 {
@@ -20,15 +23,19 @@ namespace Library.API.Controllers
             _service = service;
         }
 
-
         [HttpPost]
         [Authorize(Policy = PermissionNames.PublisherManage)]
-        public async Task<IActionResult> CreatePubliser([FromBody] CreatePublisherDto dto, [FromQuery] int createdByUserId)
+        public async Task<IActionResult> CreatePublisher([FromBody] CreatePublisherDto dto)
         {
             try
             {
-                var created = await _service.CreatePublisherAsync(dto, createdByUserId);
+                int userId = UserClaimHelper.GetUserClaim(User);
+                var created = await _service.CreatePublisherAsync(dto, userId);
                 return Ok(ApiResponseHelper.Success(created));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -37,7 +44,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query")]
-        public IActionResult GetAllPublisersQuery()
+        public IActionResult GetAllPublishersQuery()
         {
             try
             {
@@ -51,7 +58,7 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("query/{id}")]
-        public IActionResult GetPubliserByIdQuery(int id)
+        public IActionResult GetPublisherByIdQuery(int id)
         {
             try
             {
@@ -70,12 +77,17 @@ namespace Library.API.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = PermissionNames.PublisherManage)]
-        public async Task<IActionResult> UpdatePubliser([FromBody] UpdatePublisherDto dto, int id, [FromQuery] int userId)
+        public async Task<IActionResult> UpdatePublisher([FromBody] UpdatePublisherDto dto, int id)
         {
             try
             {
+                int userId = UserClaimHelper.GetUserClaim(User);
                 var updated = await _service.UpdatePublisherAsync(dto, userId, id);
                 return Ok(ApiResponseHelper.Success(updated));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {
@@ -83,20 +95,23 @@ namespace Library.API.Controllers
             }
         }
 
-        [Authorize(Policy = PermissionNames.PublisherManage)]
         [HttpPut("archive/{id}")]
-        public async Task<IActionResult> ArchivePubliser(int id, [FromQuery] int? userId = null)
+        [Authorize(Policy = PermissionNames.PublisherManage)]
+        public async Task<IActionResult> ArchivePublisher(int id)
         {
             try
             {
-                if (!userId.HasValue)
-                    return BadRequest(ApiResponseHelper.Failure<object>("UserId is required to archive a publisher."));
+                int userId = UserClaimHelper.GetUserClaim(User);
+                var success = await _service.ArchivePublisherAsync(id, userId);
 
-                var success = await _service.ArchivePublisherAsync(id, userId.Value);
                 if (!success)
                     return NotFound(ApiResponseHelper.Failure<object>("Publisher not found"));
 
                 return Ok(ApiResponseHelper.Success(new { Message = "Publisher archived successfully." }));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponseHelper.Failure<object>(ex.Message));
             }
             catch (Exception ex)
             {

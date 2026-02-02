@@ -1,4 +1,4 @@
-﻿using Library.Common.RabbitMqMessages.UserMessages;
+﻿
 using Library.User.Domain.Data;
 using Library.User.Services.Interfaces;
 using Library.User.Entities;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Library.Common.DTOs.UserApiDtos.TokenDtos;
+using Library.Common.DTOs.UserApiDtos.UserDtos;
 
 namespace Library.User.API.Controllers
 {

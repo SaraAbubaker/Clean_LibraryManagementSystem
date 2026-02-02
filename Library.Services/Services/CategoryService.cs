@@ -1,6 +1,5 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
-using Library.Shared.DTOs.Category;
 using Library.Domain.Repositories;
 using Library.Services.Interfaces;
 using Library.Entities.Models;
@@ -29,7 +28,7 @@ namespace Library.Services.Services
         public async Task<CategoryListDto> CreateCategoryAsync(CreateCategoryDto dto, int userId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var category = dto.Adapt<Category>();
 
@@ -48,7 +47,7 @@ namespace Library.Services.Services
 
         public IQueryable<CategoryListDto> GetCategoryByIdQuery(int id)
         {
-            Validate.Positive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
 
             return _categoryRepo.GetById(id)
                 .AsNoTracking()
@@ -58,7 +57,7 @@ namespace Library.Services.Services
         public async Task<CategoryListDto> UpdateCategoryAsync(UpdateCategoryDto dto, int userId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var category = Validate.Exists(
                 await _categoryRepo.GetById(dto.Id).FirstOrDefaultAsync(),
@@ -75,7 +74,7 @@ namespace Library.Services.Services
         //Archives category & Moves books out of it
         public async Task<bool> ArchiveCategoryAsync(int id, int performedByUserId)
         {
-            Validate.Positive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
 
             var category = Validate.Exists(
                 await _categoryRepo.GetById(id).FirstOrDefaultAsync(),

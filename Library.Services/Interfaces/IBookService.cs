@@ -1,8 +1,6 @@
 ﻿using Library.Common.DTOs.LibraryDtos;
 using Library.Common.DTOs.LibraryDtos.Book;
 using Library.Entities.Models;
-using Library.Shared.DTOs;
-using Library.Shared.DTOs.Book;
 
 namespace Library.Services.Interfaces
 {

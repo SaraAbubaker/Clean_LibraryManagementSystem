@@ -1,6 +1,5 @@
 ﻿
 using Library.Common.DTOs.LibraryDtos.Author;
-using Library.Shared.DTOs.Author;
 
 namespace Library.Services.Interfaces
 {
