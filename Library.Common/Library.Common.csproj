@@ -8,13 +8,13 @@
 
   <ItemGroup>
     <Compile Remove="Messages\**" />
-    <Compile Remove="RabbitMqMessages\UserMessages\UserTypeMessages\**" />
+    <Compile Remove="DTOs\UserApiDtos\UserDtos\UserTypeMessages\**" />
     <Compile Remove="Seeder\**" />
     <EmbeddedResource Remove="Messages\**" />
-    <EmbeddedResource Remove="RabbitMqMessages\UserMessages\UserTypeMessages\**" />
+    <EmbeddedResource Remove="DTOs\UserApiDtos\UserDtos\UserTypeMessages\**" />
     <EmbeddedResource Remove="Seeder\**" />
     <None Remove="Messages\**" />
-    <None Remove="RabbitMqMessages\UserMessages\UserTypeMessages\**" />
+    <None Remove="DTOs\UserApiDtos\UserDtos\UserTypeMessages\**" />
     <None Remove="Seeder\**" />
   </ItemGroup>
 

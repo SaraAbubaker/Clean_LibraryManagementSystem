@@ -1,6 +1,6 @@
-﻿using Library.Common.Exceptions;
-using Library.Common.RabbitMqMessages.ApiResponses;
-using Library.Common.RabbitMqMessages.UserMessages;
+﻿using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.UserApiDtos.UserDtos;
+using Library.Common.Exceptions;
 using Library.User.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

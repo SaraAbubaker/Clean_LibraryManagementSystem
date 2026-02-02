@@ -6,6 +6,7 @@ using Library.Domain.Repositories;
 using Library.Entities.Models;
 using Library.Common.Helpers;
 using Library.Common.Exceptions;
+using Library.Common.DTOs.LibraryDtos.BorrowRecord;
 
 namespace Library.Services.Services
 {

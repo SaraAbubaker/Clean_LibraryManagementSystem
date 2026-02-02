@@ -1,5 +1,7 @@
-﻿using Library.Common.Exceptions;
-using Library.Common.RabbitMqMessages.ApiResponses;
+﻿using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.LibraryDtos;
+using Library.Common.DTOs.LibraryDtos.Book;
+using Library.Common.Exceptions;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
 using Library.Shared.DTOs;
@@ -7,7 +9,7 @@ using Library.Shared.DTOs.Book;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using static Library.Shared.DTOs.SearchParamsDto;
+using static Library.Common.DTOs.LibraryDtos.SearchParamsDto;
 
 namespace Library.API.Controllers
 {

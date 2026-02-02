@@ -1,6 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Library.Common.RabbitMqMessages.UserMessages;
+using Library.Common.DTOs.UserApiDtos.UserDtos;
 
 namespace Library.UI.Helpers
 {

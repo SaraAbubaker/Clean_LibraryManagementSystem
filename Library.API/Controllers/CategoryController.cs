@@ -1,5 +1,6 @@
-﻿using Library.Common.Exceptions;
-using Library.Common.RabbitMqMessages.ApiResponses;
+﻿using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.LibraryDtos.Category;
+using Library.Common.Exceptions;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
 using Library.Shared.DTOs.Category;

@@ -1,5 +1,4 @@
 ﻿using Library.Common.Helpers;
-using Library.Common.RabbitMqMessages.UserMessages;
 using Library.Common.Exceptions;
 using Library.User.Domain.Data;
 using Library.User.Entities;
@@ -10,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Library.Common.DTOs.UserApiDtos.UserDtos;
 
 namespace Library.User.Services.Services
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net;
-using Library.Common.RabbitMqMessages.UserTypeMessages;
+using Library.Common.DTOs.UserApiDtos.UserTypeDtos;
 
 namespace Library.UI.Models
 {

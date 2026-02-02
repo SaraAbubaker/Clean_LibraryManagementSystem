@@ -1,4 +1,4 @@
-﻿using Library.Common.RabbitMqMessages.UserMessages;
+﻿using Library.Common.DTOs.UserApiDtos.UserDtos;
 
 namespace Library.User.Services.Interfaces
 {

@@ -8,6 +8,8 @@ using Library.Entities.Models;
 using Library.Shared.DTOs;
 using Mapster;
 using Library.Common.Helpers;
+using Library.Common.DTOs.LibraryDtos.Book;
+using Library.Common.DTOs.LibraryDtos;
 
 namespace Library.Services.Services
 {

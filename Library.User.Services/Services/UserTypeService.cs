@@ -1,5 +1,5 @@
-﻿using Library.Common.Helpers;
-using Library.Common.RabbitMqMessages.UserTypeMessages;
+﻿using Library.Common.DTOs.UserApiDtos.UserTypeDtos;
+using Library.Common.Helpers;
 using Library.User.Entities;
 using Library.User.Services.Interfaces;
 using Mapster;

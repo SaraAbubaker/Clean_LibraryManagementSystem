@@ -21,11 +21,9 @@ namespace Library.Entities.Models
         [Range(0, int.MaxValue, ErrorMessage = "InventoryRecordId must be 0 or positive.")]
         public int InventoryRecordId { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "UserId must be 0 or positive.")]
-        public int UserId { get; set; }
-
         //Navigation properties
         public InventoryRecord? InventoryRecord { get; set; }
+
 
 
         //Validate DueDate is not before BorrowDate

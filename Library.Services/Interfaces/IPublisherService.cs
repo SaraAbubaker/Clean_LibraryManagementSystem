@@ -1,4 +1,5 @@
 ﻿
+using Library.Common.DTOs.LibraryDtos.Publisher;
 using Library.Shared.DTOs.Publisher;
 
 namespace Library.Services.Interfaces

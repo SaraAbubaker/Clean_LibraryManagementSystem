@@ -1,4 +1,4 @@
-﻿using Library.Common.RabbitMqMessages.ApiResponses;
+﻿using Library.Common.DTOs.ApiResponseDtos;
 using System.Text;
 using System.Text.Json;
 

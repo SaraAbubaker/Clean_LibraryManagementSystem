@@ -1,4 +1,4 @@
-﻿using Library.Common.RabbitMqMessages.UserMessages;
+﻿using Library.Common.DTOs.UserApiDtos.UserDtos;
 using Library.User.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;

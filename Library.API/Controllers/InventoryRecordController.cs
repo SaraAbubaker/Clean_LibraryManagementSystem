@@ -1,4 +1,4 @@
-﻿using Library.Common.RabbitMqMessages.ApiResponses;
+﻿using Library.Common.DTOs.ApiResponseDtos;
 using Library.Common.StringConstants;
 using Library.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;

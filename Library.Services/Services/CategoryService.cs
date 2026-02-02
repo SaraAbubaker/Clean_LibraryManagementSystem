@@ -7,6 +7,7 @@ using Library.Entities.Models;
 using Mapster;
 using Library.Common.Helpers;
 using Library.Common.Exceptions;
+using Library.Common.DTOs.LibraryDtos.Category;
 
 namespace Library.Services.Services
 {

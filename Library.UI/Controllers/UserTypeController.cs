@@ -1,5 +1,5 @@
-﻿using Library.Common.RabbitMqMessages.ApiResponses;
-using Library.Common.RabbitMqMessages.UserTypeMessages;
+﻿using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.UserApiDtos.UserTypeDtos;
 using Library.Common.StringConstants;
 using Library.UI.Helpers;
 using Library.UI.Models;
