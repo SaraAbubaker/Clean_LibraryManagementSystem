@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Net;
+﻿
 using Library.Common.DTOs.UserApiDtos.UserTypeDtos;
 
 namespace Library.UI.Models
@@ -8,8 +7,5 @@ namespace Library.UI.Models
     {
         public List<UserTypeListMessage> UserTypes { get; set; } = new List<UserTypeListMessage>();
         public string? ErrorMessage { get; set; }
-        public string? SuccessMessage { get; set; }
-        public HttpStatusCode? StatusCode { get; set; }
-        public string? ApiResponse { get; set; }
     }
 }

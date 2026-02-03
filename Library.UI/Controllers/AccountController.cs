@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace Library.UI.Controllers.UserControllers
+namespace Library.UI.Controllers
 {
     [AllowAnonymous]
     public class AccountController : Controller
@@ -27,11 +27,13 @@ namespace Library.UI.Controllers.UserControllers
 
         // GET: /Account/Register
         [HttpGet]
-        public IActionResult Register() => View();
+        public IActionResult Register() => View(new RegisterUserMessage());
+
 
         // GET: /Account/Login
         [HttpGet]
         public IActionResult Login() => View(new LoginUserMessage());
+
 
         // POST: /Account/Register
         [HttpPost]
@@ -42,35 +44,38 @@ namespace Library.UI.Controllers.UserControllers
 
             try
             {
-                // Call register endpoint via generic API client (expect ApiResponse to get error message)
-                var registerResponse = await _apiClient.PostAsync<RegisterUserMessage, ApiResponse<UserListMessage>>(
-                    _apiSettings.Endpoints.Register, input);
+                var registerResponse =
+                    await _apiClient.PostAsync<RegisterUserMessage, ApiResponse<UserListMessage>>(
+                        _apiSettings.Endpoints.Register, input);
 
                 if (registerResponse == null)
                 {
-                    ViewBag.LoginError = "Authentication service unavailable. Please try again later.";
+                    ModelState.AddModelError(string.Empty,
+                        "Authentication service unavailable. Please try again later.");
                     return View(input);
                 }
 
-                if (registerResponse.Success && registerResponse.Data != null && !string.IsNullOrEmpty(registerResponse.Data.Token))
+                if (registerResponse.Success &&
+                    registerResponse.Data != null &&
+                    !string.IsNullOrEmpty(registerResponse.Data.Token))
                 {
-                    // Automatically log in using the returned token
                     await SignInHelper.SignInWithJwtAsync(HttpContext, registerResponse.Data.Token);
                     TempData["SuccessMessage"] = "Registration successful!";
                     return RedirectToAction("Index", "Home");
                 }
 
-                // Map API-provided error message to specific fields like Login does
-                ApiErrorMapper.MapRegisterErrorToModelState(ModelState, registerResponse.Message, input);
+                ApiErrorMapper.MapRegisterErrorToModelState(
+                    ModelState, registerResponse.Message, input);
 
                 return View(input);
             }
             catch (Exception ex)
             {
-                ViewBag.LoginError = ex.Message;
+                ModelState.AddModelError(string.Empty, ex.Message);
                 return View(input);
             }
         }
+
 
         // POST: /Account/Login
         [HttpPost]
@@ -128,6 +133,5 @@ namespace Library.UI.Controllers.UserControllers
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
-
     }
 }

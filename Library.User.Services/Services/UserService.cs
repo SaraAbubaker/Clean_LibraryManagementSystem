@@ -183,7 +183,7 @@ namespace Library.User.Services.Services
 
         public IQueryable<UserListMessage> GetUserByIdQuery(int id)
         {
-            Validate.Positive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
 
             return _userManager.Users
                 .Where(u => u.Id == id)
@@ -205,7 +205,7 @@ namespace Library.User.Services.Services
 
         public async Task<LogoutUserMessage> LogoutUserAsync(int userId, string token)
         {
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
             Validate.NotEmpty(token, nameof(token));
 
             var user = await _userManager.FindByIdAsync(userId.ToString())
@@ -238,8 +238,8 @@ namespace Library.User.Services.Services
 
         public async Task<UserListMessage> DeactivateUserAsync(int id, int performedByUserId)
         {
-            Validate.Positive(id, nameof(id));
-            Validate.Positive(performedByUserId, nameof(performedByUserId));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(performedByUserId, nameof(performedByUserId));
 
             var user = await _userManager.FindByIdAsync(id.ToString())
                        ?? throw new InvalidOperationException("User not found.");
@@ -263,8 +263,8 @@ namespace Library.User.Services.Services
 
         public async Task<UserListMessage> ReactivateUserAsync(int id, int performedByUserId)
         {
-            Validate.Positive(id, nameof(id));
-            Validate.Positive(performedByUserId, nameof(performedByUserId));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(performedByUserId, nameof(performedByUserId));
 
             var user = await _userManager.FindByIdAsync(id.ToString())
                        ?? throw new InvalidOperationException("User not found.");
@@ -291,8 +291,8 @@ namespace Library.User.Services.Services
 
         public async Task<UserListMessage> ArchiveUserAsync(int id, int performedByUserId)
         {
-            Validate.Positive(id, nameof(id));
-            Validate.Positive(performedByUserId, nameof(performedByUserId));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(performedByUserId, nameof(performedByUserId));
 
             var user = await _userManager.FindByIdAsync(id.ToString())
                        ?? throw new InvalidOperationException("User not found.");

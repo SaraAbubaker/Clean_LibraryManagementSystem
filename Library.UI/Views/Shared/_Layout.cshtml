@@ -33,11 +33,19 @@
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
-                            @* Show UserType only if role is Admin *@
+                            @* UserType for Admin only *@
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="UserType" asp-action="Index">User Types</a>
+                                </li>
+                            }
+
+                            @* Books: Librarian sees full, Customer sees only available *@
+                            @if (User.IsInRole("Librarian") || User.IsInRole("Customer"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Book" asp-action="Index">Books</a>
                                 </li>
                             }
 

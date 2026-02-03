@@ -1,0 +1,148 @@
+﻿@model Library.UI.Models.BookViewModel
+
+@{
+    ViewData["Title"] = "Books";
+}
+
+<div id="books-page">
+
+    <h2>Books</h2>
+
+    <!-- Success/Error Message -->
+    <div id="actionMessage" class="alert alert-success d-none"></div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+    else if (Model.Books.Any())
+    {
+        @* Show "Create New Book" button only for Librarian *@
+        @if (User.IsInRole("Librarian"))
+        {
+            <div class="mb-3">
+                <a href="@Url.Action("CreateBook")" class="btn btn-success">Create New Book</a>
+            </div>
+        }
+
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Publisher</th>
+                    <th>Publish Date</th>
+                    <th>Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var book in Model.Books)
+                {
+                    <tr id="bookRow-@book.Id">
+                        <td>@book.Id</td>
+                        <td>@book.Title</td>
+                        <td>@book.AuthorName</td>
+                        <td>@book.CategoryName</td>
+                        <td>@book.PublisherName</td>
+                        <td>@book.PublishDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (book.IsAvailable)
+                            {
+                                <span class="badge bg-success">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">No</span>
+                            }
+                        </td>
+                        <td>
+                            @if (User.IsInRole("Librarian"))
+                            {
+                                <!-- Update -->
+                                <a href="#"
+                                   class="btn btn-sm btn-primary update-btn"
+                                   data-book-id="@book.Id">
+                                    Update
+                                </a>
+
+                                <!-- Archive -->
+                                <button type="button"
+                                        class="btn btn-sm btn-danger archive-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#archiveModal"
+                                        data-book-id="@book.Id">
+                                    Archive
+                                </button>
+                            }
+                            @* Future: Customer can have a Borrow button here *@
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">No books found.</div>
+    }
+
+    @* Only Librarian gets modals *@
+    @if (User.IsInRole("Librarian"))
+    {
+        <!-- Archive Confirmation Modal -->
+        <div class="modal" id="archiveModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Archive</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to archive this book?
+                    </div>
+                    <div class="modal-footer">
+                        <form id="archiveForm">
+                            <input type="hidden" id="archiveBookId" />
+                            <button type="submit" class="btn btn-danger">Yes, Archive</button>
+                        </form>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Modal -->
+        <div class="modal" id="updateModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Book</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="updateForm">
+                            <div class="mb-3">
+                                <label class="form-label">Title</label>
+                                <input type="text" class="form-control" id="updateTitle" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Publish Date</label>
+                                <input type="date" class="form-control" id="updatePublishDate" />
+                            </div>
+                            <input type="hidden" id="updateBookId" />
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/site.js"></script>
+}

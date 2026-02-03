@@ -1,0 +1,146 @@
+﻿using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.LibraryDtos.Book;
+using Library.Common.StringConstants;
+using Library.UI.Helpers;
+using Library.UI.Models;
+using Library.UI.Models.String_constant;
+using Library.UI.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+
+namespace Library.UI.Controllers
+{
+    [Authorize(Policy = PermissionNames.BookManage)]
+    public class BookController : Controller
+    {
+        private readonly IApiClient _apiClient;
+        private readonly ApiSettings _apiSettings;
+
+        public BookController(
+            IApiClient apiClient,
+            IOptions<ApiSettings> apiSettings)
+        {
+            _apiClient = apiClient;
+            _apiSettings = apiSettings.Value;
+        }
+
+        // GET: /Books
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            var model = new BookViewModel();
+
+            try
+            {
+                // Call API to get all books
+                var response = await _apiClient.GetQueryAsync<ApiResponse<List<BookListDto>>>(
+                    $"{_apiSettings.Endpoints.Book}/query/search?page=1"
+                );
+
+                model.Books = response?.Data ?? new List<BookListDto>();
+            }
+            catch (Exception ex)
+            {
+                model.ErrorMessage = $"Failed to load books: {ex.Message}";
+            }
+
+            return View(model);
+        }
+
+        // GET: /Books/CreateBook
+        [HttpGet]
+        public IActionResult CreateBook() => View(new CreateBookDto());
+
+        // POST: /Books/CreateBook
+        [HttpPost]
+        public async Task<IActionResult> CreateBook(CreateBookDto dto)
+        {
+            if (!ModelState.IsValid)
+                return View(dto);
+
+            try
+            {
+                int currentUserId = GetUserHelper.GetCurrentUserId(User);
+
+                var response = await _apiClient.PostAsync(
+                    _apiSettings.Endpoints.Book,
+                    dto,
+                    currentUserId
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    ModelState.AddModelError("", error);
+                    return View(dto);
+                }
+
+                TempData["SuccessMessage"] = "Book added successfully!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Unexpected error: {ex.Message}");
+                return View(dto);
+            }
+        }
+
+        // POST: /Books/UpdateBook (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> UpdateBook([FromBody] UpdateBookDto dto)
+        {
+            try
+            {
+                int currentUserId = GetUserHelper.GetCurrentUserId(User);
+
+                var response = await _apiClient.PutAsync(
+                    _apiSettings.Endpoints.Book,
+                    dto.Id,
+                    dto,
+                    currentUserId
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    return Json(new { success = false, message = error });
+                }
+
+                return Json(new { success = true, message = "Book updated successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // POST: /Books/ArchiveBook (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> ArchiveBook([FromBody] int id)
+        {
+            try
+            {
+                int currentUserId = GetUserHelper.GetCurrentUserId(User);
+
+                var response = await _apiClient.PutArchiveAsync(
+                    _apiSettings.Endpoints.Book,
+                    id,
+                    currentUserId
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    return Json(new { success = false, message = error });
+                }
+
+                return Json(new { success = true, message = "Book archived successfully!", id });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+    }
+}

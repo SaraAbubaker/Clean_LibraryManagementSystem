@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace Library.UI.Controllers.UserControllers
+namespace Library.UI.Controllers
 {
     [Authorize(Policy = PermissionNames.UserManage)]
     public class UserTypeController : Controller

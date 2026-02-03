@@ -1,4 +1,4 @@
-using Library.Common.StringConstants;
+﻿using Library.Common.StringConstants;
 using Library.UI.Models.String_constant;
 using Library.UI.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,7 +8,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ================== SERVICES ==================
+
 builder.Services.AddControllersWithViews();
 
 builder.Services.Configure<ApiSettings>(
@@ -36,6 +37,7 @@ builder.Services.AddHttpClient("Library.UserApi")
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IApiClient, ApiClient>();
 
+// ================== AUTH ==================
 
 // Configure authentication with both Cookies and JWT
 builder.Services.AddAuthentication(options =>
@@ -71,6 +73,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// ================== AUTHORIZATION ==================
+
 builder.Services.AddAuthorization();
 
 var authBuilder = builder.Services.AddAuthorizationBuilder();
@@ -80,10 +84,10 @@ foreach (var perm in PermissionNames.All)
     authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
 }
 
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ================== PIPELINE ==================
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -91,15 +95,20 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
+
+app.UseCookiePolicy();
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseSession();
+// ================== ROUTING ==================
 
 app.MapStaticAssets();
 
+// Default route (non-area)
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")

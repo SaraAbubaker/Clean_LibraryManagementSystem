@@ -20,7 +20,7 @@ namespace Library.User.Services.Services
         public async Task<UserTypeListMessage> CreateUserTypeAsync(CreateUserTypeMessage dto, int createdByUserId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(createdByUserId, nameof(createdByUserId));
+            ValidationHelpers.ValidatePositive(createdByUserId, nameof(createdByUserId));
 
             var existingAdmin = await _roleManager.Roles
                 .FirstOrDefaultAsync(r => r.Name!.ToLower() == "admin");
@@ -61,7 +61,7 @@ namespace Library.User.Services.Services
 
         public IQueryable<UserTypeListMessage> GetUserTypeByIdQuery(int id)
         {
-            Validate.Positive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
 
             return _roleManager.Roles
                 .Where(r => r.Id == id)
@@ -76,8 +76,8 @@ namespace Library.User.Services.Services
         public async Task<UserTypeListMessage> UpdateUserTypeAsync(UpdateUserTypeMessage dto, int userId, int userTypeId)
         {
             Validate.ValidateModel(dto);
-            Validate.Positive(userTypeId, nameof(userTypeId));
-            Validate.Positive(userId, nameof(userId));
+            ValidationHelpers.ValidatePositive(userTypeId, nameof(userTypeId));
+            ValidationHelpers.ValidatePositive(userId, nameof(userId));
 
             var role = await _roleManager.Roles.FirstOrDefaultAsync(r => r.Id == userTypeId)
                 ?? throw new KeyNotFoundException($"Role {userTypeId} not found.");
@@ -102,8 +102,8 @@ namespace Library.User.Services.Services
 
         public async Task<bool> ArchiveUserTypeAsync(int id, int archivedByUserId)
         {
-            Validate.Positive(id, nameof(id));
-            Validate.Positive(archivedByUserId, nameof(archivedByUserId));
+            ValidationHelpers.ValidatePositive(id, nameof(id));
+            ValidationHelpers.ValidatePositive(archivedByUserId, nameof(archivedByUserId));
 
             var role = await _roleManager.Roles.FirstOrDefaultAsync(r => r.Id == id)
                 ?? throw new KeyNotFoundException($"Role {id} not found.");
