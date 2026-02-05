@@ -29,11 +29,9 @@ namespace Library.UI.Controllers
         [HttpGet]
         public IActionResult Register() => View(new RegisterUserMessage());
 
-
         // GET: /Account/Login
         [HttpGet]
         public IActionResult Login() => View(new LoginUserMessage());
-
 
         // POST: /Account/Register
         [HttpPost]
@@ -44,9 +42,13 @@ namespace Library.UI.Controllers
 
             try
             {
+                // Use the new PostAsync with apiName = "UserApi"
                 var registerResponse =
-                    await _apiClient.PostAsync<RegisterUserMessage, ApiResponse<UserListMessage>>(
-                        _apiSettings.Endpoints.Register, input);
+                    await _apiClient.PostAsync<RegisterUserMessage, ApiResponse<LoginUserResponseMessage>>(
+                        _apiSettings.UserApi.Endpoints.Register,
+                        input,
+                        apiName: "UserApi"
+                    );
 
                 if (registerResponse == null)
                 {
@@ -57,9 +59,9 @@ namespace Library.UI.Controllers
 
                 if (registerResponse.Success &&
                     registerResponse.Data != null &&
-                    !string.IsNullOrEmpty(registerResponse.Data.Token))
+                    !string.IsNullOrEmpty(registerResponse.Data.AccessToken))
                 {
-                    await SignInHelper.SignInWithJwtAsync(HttpContext, registerResponse.Data.Token);
+                    await SignInHelper.SignInWithJwtAsync(HttpContext, registerResponse.Data.AccessToken);
                     TempData["SuccessMessage"] = "Registration successful!";
                     return RedirectToAction("Index", "Home");
                 }
@@ -76,7 +78,6 @@ namespace Library.UI.Controllers
             }
         }
 
-
         // POST: /Account/Login
         [HttpPost]
         public async Task<IActionResult> Login(LoginUserMessage input)
@@ -87,26 +88,26 @@ namespace Library.UI.Controllers
             try
             {
                 var apiResponse = await _apiClient.PostAsync<LoginUserMessage, ApiResponse<LoginUserResponseMessage>>(
-                    _apiSettings.Endpoints.Login, input);
+                    _apiSettings.UserApi.Endpoints.Login,
+                    input,
+                    apiName: "UserApi"
+                );
 
-                // Defensive: PostAsync can return null on transport/deserialization failure.
                 if (apiResponse == null)
                 {
-                    ModelState.AddModelError(string.Empty, "Authentication service unavailable. Please try again later.");
+                    ModelState.AddModelError(string.Empty,
+                        "Authentication service unavailable. Please try again later.");
                     return View(input);
                 }
 
                 if (apiResponse.Success && apiResponse.Data != null)
                 {
-                    // Successful login — sign in with JWT
                     await SignInHelper.SignInWithJwtAsync(HttpContext, apiResponse.Data.AccessToken);
                     TempData["SuccessMessage"] = "Login successful!";
                     return RedirectToAction("Index", "Home");
                 }
 
-                // Failed login — map API error message to correct field
                 ApiErrorMapper.MapLoginErrorToModelState(ModelState, apiResponse.Message, input);
-
                 return View(input);
             }
             catch (Exception ex)

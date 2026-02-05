@@ -26,6 +26,12 @@ namespace Library.UI.Helpers
 
             var principal = new ClaimsPrincipal(identity);
 
+            Console.WriteLine("Claims after sign-in:");
+            foreach (var claim in principal.Claims)
+            {
+                Console.WriteLine($"{claim.Type} = {claim.Value}");
+            }
+
             // Issue authentication cookie
             await httpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,

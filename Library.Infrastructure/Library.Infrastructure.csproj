@@ -7,9 +7,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="RabbitMQ\Consuming\**" />
-	  <EmbeddedResource Remove="RabbitMQ\Consuming\**" />
-	  <None Remove="RabbitMQ\Consuming\**" />
+		<Compile Remove="RabbitMQ\Consuming\**" />
+		<EmbeddedResource Remove="RabbitMQ\Consuming\**" />
+		<None Remove="RabbitMQ\Consuming\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -19,14 +19,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MassTransit" Version="9.0.0" />
+		<PackageReference Include="MassTransit" Version="8.0.0" />
+		<PackageReference Include="MassTransit.Abstractions" Version="8.0.0" />
+		<PackageReference Include="MassTransit.RabbitMQ" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
 		<PackageReference Include="MongoDB.Driver" Version="3.6.0" />
-		<PackageReference Include="RabbitMQ.Client" Version="7.2.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="RabbitMQ\Services\" />
+		<Folder Include="RabbitMQ\Services\" />
 	</ItemGroup>
 
 </Project>

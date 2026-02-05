@@ -1,4 +1,5 @@
-﻿using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.ApiResponseDtos;
+using Library.Common.DTOs.LibraryDtos;
 using Library.Common.DTOs.LibraryDtos.Book;
 using Library.Common.StringConstants;
 using Library.UI.Helpers;
@@ -25,7 +26,7 @@ namespace Library.UI.Controllers
             _apiSettings = apiSettings.Value;
         }
 
-        // GET: /Books
+        // GET: /Book
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -33,12 +34,12 @@ namespace Library.UI.Controllers
 
             try
             {
-                // Call API to get all books
-                var response = await _apiClient.GetQueryAsync<ApiResponse<List<BookListDto>>>(
-                    $"{_apiSettings.Endpoints.Book}/query/search?page=1"
+                var response = await _apiClient.GetAsync<ApiPagedResponse<PagedResultDto<BookListDto>>>(
+                    _apiSettings.LibraryApi.Endpoints.Book + "/query/search?page=1",
+                    apiName: "LibraryApi"
                 );
 
-                model.Books = response?.Data ?? new List<BookListDto>();
+                model.Books = response?.Data?.Items ?? new List<BookListDto>();
             }
             catch (Exception ex)
             {
@@ -48,11 +49,11 @@ namespace Library.UI.Controllers
             return View(model);
         }
 
-        // GET: /Books/CreateBook
+        // GET: /Book/CreateBook
         [HttpGet]
         public IActionResult CreateBook() => View(new CreateBookDto());
 
-        // POST: /Books/CreateBook
+        // POST: /Book/CreateBook
         [HttpPost]
         public async Task<IActionResult> CreateBook(CreateBookDto dto)
         {
@@ -64,9 +65,10 @@ namespace Library.UI.Controllers
                 int currentUserId = GetUserHelper.GetCurrentUserId(User);
 
                 var response = await _apiClient.PostAsync(
-                    _apiSettings.Endpoints.Book,
+                    _apiSettings.LibraryApi.Endpoints.Book,
                     dto,
-                    currentUserId
+                    currentUserId,
+                    apiName: "LibraryApi"
                 );
 
                 if (!response.IsSuccessStatusCode)
@@ -86,7 +88,7 @@ namespace Library.UI.Controllers
             }
         }
 
-        // POST: /Books/UpdateBook (AJAX)
+        // POST: /Book/UpdateBook (AJAX)
         [HttpPost]
         public async Task<IActionResult> UpdateBook([FromBody] UpdateBookDto dto)
         {
@@ -95,10 +97,11 @@ namespace Library.UI.Controllers
                 int currentUserId = GetUserHelper.GetCurrentUserId(User);
 
                 var response = await _apiClient.PutAsync(
-                    _apiSettings.Endpoints.Book,
+                    _apiSettings.LibraryApi.Endpoints.Book,
                     dto.Id,
                     dto,
-                    currentUserId
+                    currentUserId,
+                    apiName: "LibraryApi"
                 );
 
                 if (!response.IsSuccessStatusCode)
@@ -115,7 +118,7 @@ namespace Library.UI.Controllers
             }
         }
 
-        // POST: /Books/ArchiveBook (AJAX)
+        // POST: /Book/ArchiveBook (AJAX)
         [HttpPost]
         public async Task<IActionResult> ArchiveBook([FromBody] int id)
         {
@@ -124,9 +127,10 @@ namespace Library.UI.Controllers
                 int currentUserId = GetUserHelper.GetCurrentUserId(User);
 
                 var response = await _apiClient.PutArchiveAsync(
-                    _apiSettings.Endpoints.Book,
+                    _apiSettings.LibraryApi.Endpoints.Book,
                     id,
-                    currentUserId
+                    currentUserId,
+                    apiName: "LibraryApi"
                 );
 
                 if (!response.IsSuccessStatusCode)

@@ -1,5 +1,4 @@
-﻿
-using Library.Infrastructure.RabbitMQ.Configuation;
+﻿using Library.Infrastructure.RabbitMQ.Configuation;
 using Library.Infrastructure.Logging.Interfaces;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
@@ -14,24 +13,24 @@ namespace Library.Infrastructure.RabbitMQ.Services
         private readonly IConnection _connection;
         private readonly RabbitMqSettings _settings;
 
-        public RabbitMqLoggerService(IConnection connection, IOptions<RabbitMqSettings> options)
+        public RabbitMqLoggerService(
+            IConnection connection,
+            IOptions<RabbitMqSettings> options)
         {
             _connection = connection;
             _settings = options.Value;
         }
 
-        // IMessageLoggerService implementation
         public async Task LogInfoAsync(MessageLogMessage dto)
         {
             var json = JsonSerializer.Serialize(dto);
             await PublishAsync(_settings.MessageQueue, json);
         }
 
-        // IExceptionLoggerService implementation
         public async Task LogWarningAsync(WarningLogMessage dto)
         {
             var json = JsonSerializer.Serialize(dto);
-            await PublishAsync(_settings.ExceptionQueue, json);
+            await PublishAsync(_settings.ExceptionQueue, json); // confirm intent
         }
 
         public async Task LogExceptionAsync(ExceptionLogMessage dto)
@@ -40,25 +39,28 @@ namespace Library.Infrastructure.RabbitMQ.Services
             await PublishAsync(_settings.ExceptionQueue, json);
         }
 
-        // Shared publishing logic
-        private async Task PublishAsync(string queueName, string message)
+        private Task PublishAsync(string queueName, string message)
         {
-            await using var channel = await _connection.CreateChannelAsync();
+            using var channel = _connection.CreateModel();
 
-            await channel.QueueDeclareAsync(
+            channel.QueueDeclare(
                 queue: queueName,
                 durable: true,
                 exclusive: false,
-                autoDelete: false
+                autoDelete: false,
+                arguments: null
             );
 
             var body = Encoding.UTF8.GetBytes(message);
 
-            await channel.BasicPublishAsync(
+            channel.BasicPublish(
                 exchange: "",
                 routingKey: queueName,
+                basicProperties: null,
                 body: body
             );
+
+            return Task.CompletedTask;
         }
     }
 }

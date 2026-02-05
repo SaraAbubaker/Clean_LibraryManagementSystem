@@ -31,8 +31,21 @@ builder.Services.AddHttpClient("Library.UserApi")
             .GetRequiredService<IOptions<ApiSettings>>()
             .Value;
 
-        client.BaseAddress = new Uri(apiSettings.BaseUrl);
+        // Use UserApi BaseUrl
+        client.BaseAddress = new Uri(apiSettings.UserApi.BaseUrl);
     });
+
+builder.Services.AddHttpClient("Library.LibraryApi")
+    .ConfigureHttpClient((sp, client) =>
+    {
+        var apiSettings = sp
+            .GetRequiredService<IOptions<ApiSettings>>()
+            .Value;
+
+        // Use LibraryApi BaseUrl
+        client.BaseAddress = new Uri(apiSettings.LibraryApi.BaseUrl);
+    });
+
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IApiClient, ApiClient>();
@@ -75,14 +88,14 @@ builder.Services.AddAuthentication(options =>
 
 // ================== AUTHORIZATION ==================
 
-builder.Services.AddAuthorization();
-
-var authBuilder = builder.Services.AddAuthorizationBuilder();
-
-foreach (var perm in PermissionNames.All)
+builder.Services.AddAuthorization(options =>
 {
-    authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
-}
+    foreach (var perm in PermissionNames.All)
+    {
+        options.AddPolicy(perm, policy =>
+            policy.RequireClaim("Permission", perm));
+    }
+});
 
 var app = builder.Build();
 

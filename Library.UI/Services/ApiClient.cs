@@ -1,10 +1,10 @@
-﻿using Library.UI.Helpers;
+using Library.UI.Helpers;
 using Library.UI.Models.String_constant;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Net;
+using System.Text.Json;
 
 namespace Library.UI.Services
 {
@@ -24,12 +24,18 @@ namespace Library.UI.Services
             _apiSettings = apiSettings.Value;
         }
 
-        // Core helpers
-
-        private HttpClient CreateClient()
+        // ================== Core helper ==================
+        private HttpClient CreateClient(string apiName = "LibraryApi")
         {
-            var client = _httpClientFactory.CreateClient("Library.UserApi");
+            string clientName = apiName switch
+            {
+                "UserApi" => "Library.UserApi",
+                _ => "Library.LibraryApi"   // default to LibraryApi
+            };
 
+            var client = _httpClientFactory.CreateClient(clientName);
+
+            // Add JWT token if available
             var token = _httpContextAccessor.HttpContext?
                 .User?
                 .Claims?
@@ -55,72 +61,58 @@ namespace Library.UI.Services
             return JsonSerializer.Deserialize<T>(json, options);
         }
 
-        // Public API
+        // ================== Public API ==================
 
-        public async Task<T?> GetQueryAsync<T>(string basePath)
+        public async Task<T?> GetQueryAsync<T>(string basePath, string apiName = "LibraryApi")
         {
-            var client = CreateClient();
-
-            var response = await client.GetAsync(
-                ApiUrlBuilder.ForQuery(basePath)
-            );
-
+            var client = CreateClient(apiName);
+            var response = await client.GetAsync(ApiUrlBuilder.ForQuery(basePath));
             response.EnsureSuccessStatusCode();
-
             return await DeserializeAsync<T>(response);
         }
 
-        public async Task<T?> GetByIdAsync<T>(string basePath, int id, int? userId = null)
+        public async Task<T?> GetAsync<T>(string path, string apiName = "LibraryApi")
         {
-            var client = CreateClient();
-
-            var response = await client.GetAsync(
-                ApiUrlBuilder.ForId(basePath, id, userId)
-            );
-
+            var client = CreateClient(apiName);
+            var response = await client.GetAsync(path);
             response.EnsureSuccessStatusCode();
-
             return await DeserializeAsync<T>(response);
         }
 
-        public async Task<HttpResponseMessage> PostAsync<TBody>(string basePath, TBody body, int? userId = null)
+        public async Task<T?> GetByIdAsync<T>(string basePath, int id, int? userId = null, string apiName = "LibraryApi")
         {
-            var client = CreateClient();
+            var client = CreateClient(apiName);
+            var response = await client.GetAsync(ApiUrlBuilder.ForId(basePath, id, userId));
+            response.EnsureSuccessStatusCode();
+            return await DeserializeAsync<T>(response);
+        }
 
-            var url = userId.HasValue
-                ? $"{basePath}?createdByUserId={userId}"
-                : basePath;
-
+        public async Task<HttpResponseMessage> PostAsync<TBody>(string basePath, TBody body, int? userId = null, string apiName = "LibraryApi")
+        {
+            var client = CreateClient(apiName);
+            var url = userId.HasValue ? $"{basePath}?createdByUserId={userId}" : basePath;
             return await client.PostAsync(url, JsonContent.Create(body));
         }
 
-        public async Task<HttpResponseMessage> PutAsync<TBody>(string basePath, int id, TBody body, int? userId = null)
+        public async Task<HttpResponseMessage> PutAsync<TBody>(string basePath, int id, TBody body, int? userId = null, string apiName = "LibraryApi")
         {
-            var client = CreateClient();
-
+            var client = CreateClient(apiName);
             var url = ApiUrlBuilder.ForId(basePath, id, userId);
-
             return await client.PutAsync(url, JsonContent.Create(body));
         }
 
-        public async Task<HttpResponseMessage> PutArchiveAsync(string basePath, int id, int userId)
+        public async Task<HttpResponseMessage> PutArchiveAsync(string basePath, int id, int userId, string apiName = "LibraryApi")
         {
-            var client = CreateClient();
-
-            return await client.PutAsync(
-                $"{basePath}/archive/{id}?userId={userId}",
-                null
-            );
+            var client = CreateClient(apiName);
+            return await client.PutAsync($"{basePath}/archive/{id}?userId={userId}", null);
         }
 
-        public async Task<T> PostAsync<TBody, T>(string basePath, TBody body, int? userId = null)
+        public async Task<T> PostAsync<TBody, T>(string basePath, TBody body, int? userId = null, string apiName = "LibraryApi")
         {
-            var response = await PostAsync(basePath, body, userId);
-
+            var response = await PostAsync(basePath, body, userId, apiName);
             var content = await response.Content.ReadAsStringAsync();
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-            // Attempt to deserialize regardless of status code; some APIs return structured error payloads
             if (!string.IsNullOrWhiteSpace(content))
             {
                 try
@@ -129,24 +121,13 @@ namespace Library.UI.Services
                     if (parsed != null)
                         return parsed;
                 }
-                catch (JsonException)
-                {
-                    // fall through to throw a richer exception below
-                }
+                catch (JsonException) { }
             }
 
-            // If we get here, either content was empty, deserialization failed, or parsed was null.
             if (response.IsSuccessStatusCode)
-            {
-                // success but nothing to deserialize -> treat as unexpected
                 throw new ApiClientException($"Empty or invalid response from API for endpoint '{basePath}'.", (HttpStatusCode?)response.StatusCode, content);
-            }
             else
-            {
-                // non-successful status code -> throw with details (caller can catch and map to ModelState)
                 throw new ApiClientException($"API returned error {(int)response.StatusCode} ({response.ReasonPhrase}).", (HttpStatusCode?)response.StatusCode, content);
-            }
         }
-
     }
 }

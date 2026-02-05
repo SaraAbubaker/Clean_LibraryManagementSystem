@@ -18,7 +18,6 @@ namespace Library.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Resolve IPublishEndpoint per request scope
             var publishEndpoint = context.RequestServices.GetRequiredService<IPublishEndpoint>();
 
             // Capture Request
@@ -45,11 +44,12 @@ namespace Library.API.Middleware
             }
             catch (Exception ex)
             {
+                WriteToConsole("Unhandled exception in request pipeline", ex);
+
                 var endpoint = context.GetEndpoint();
                 var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>();
                 string serviceName = actionDescriptor?.ActionName ?? requestSummary;
 
-                // Exception → publish to ExceptionQueue
                 var exceptionDto = new ExceptionLogMessage
                 {
                     Guid = Guid.NewGuid(),
@@ -61,10 +61,17 @@ namespace Library.API.Middleware
                     StackTrace = (ex.StackTrace ?? string.Empty).TrimStart()
                 };
 
-                Validate.ValidateModel(exceptionDto);
-                await publishEndpoint.Publish(exceptionDto);
+                try
+                {
+                    Validate.ValidateModel(exceptionDto);
+                    await publishEndpoint.Publish(exceptionDto);
+                }
+                catch (Exception publishEx)
+                {
+                    WriteToConsole("Failed to publish ExceptionLogMessage", publishEx);
+                }
 
-                throw; // rethrow so pipeline continues correctly
+                throw;
             }
             finally
             {
@@ -78,17 +85,20 @@ namespace Library.API.Middleware
                 var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>();
                 string serviceName = actionDescriptor?.ActionName ?? requestSummary;
 
-                // Decide where to log
                 if (!string.IsNullOrWhiteSpace(responseText) && responseText.Contains("\"success\""))
                 {
                     if (responseText.Contains("\"success\":false"))
                     {
-                        await PublishWarningAsync(publishEndpoint, serviceName, requestSummary, requestBody, responseText,
+                        await PublishWarningAsync(
+                            publishEndpoint,
+                            serviceName,
+                            requestSummary,
+                            requestBody,
+                            responseText,
                             ExtractMessage(responseText));
                     }
                     else if (responseText.Contains("\"success\":true"))
                     {
-                        // Info → publish to MessageQueue
                         var messageDto = new MessageLogMessage
                         {
                             Guid = Guid.NewGuid(),
@@ -99,28 +109,45 @@ namespace Library.API.Middleware
                             Response = responseSummary
                         };
 
-                        Validate.ValidateModel(messageDto);
-                        await publishEndpoint.Publish(messageDto);
+                        try
+                        {
+                            Validate.ValidateModel(messageDto);
+                            await publishEndpoint.Publish(messageDto);
+                        }
+                        catch (Exception publishEx)
+                        {
+                            WriteToConsole("Failed to publish MessageLogMessage", publishEx);
+                        }
                     }
                     else
                     {
-                        await PublishWarningAsync(publishEndpoint, serviceName, requestSummary, requestBody, responseSummary,
+                        await PublishWarningAsync(
+                            publishEndpoint,
+                            serviceName,
+                            requestSummary,
+                            requestBody,
+                            responseSummary,
                             "Response did not contain a clear success flag.");
                     }
                 }
                 else
                 {
-                    // Non-JSON responses → Failed
                     try
                     {
-                        JsonDocument.Parse(responseText); // will throw if invalid JSON
+                        JsonDocument.Parse(responseText);
 
-                        // If parsing succeeds but no "success" flag → Warning
-                        await PublishWarningAsync(publishEndpoint, serviceName, requestSummary, requestBody, responseSummary,
+                        await PublishWarningAsync(
+                            publishEndpoint,
+                            serviceName,
+                            requestSummary,
+                            requestBody,
+                            responseSummary,
                             "Response did not contain a clear success flag.");
                     }
                     catch (Exception ex)
                     {
+                        WriteToConsole("Response JSON parsing failed", ex);
+
                         var failedDto = new FailedLogMessage
                         {
                             Guid = Guid.NewGuid(),
@@ -132,12 +159,18 @@ namespace Library.API.Middleware
                             StackTrace = (ex.StackTrace ?? string.Empty).TrimStart()
                         };
 
-                        Validate.ValidateModel(failedDto);
-                        await publishEndpoint.Publish(failedDto);
+                        try
+                        {
+                            Validate.ValidateModel(failedDto);
+                            await publishEndpoint.Publish(failedDto);
+                        }
+                        catch (Exception publishEx)
+                        {
+                            WriteToConsole("Failed to publish FailedLogMessage", publishEx);
+                        }
                     }
                 }
 
-                // Restore response body
                 await responseBody.CopyToAsync(originalBody);
                 context.Response.Body = originalBody;
             }
@@ -162,8 +195,15 @@ namespace Library.API.Middleware
                 Response = responseText
             };
 
-            Validate.ValidateModel(warningDto);
-            await publishEndpoint.Publish(warningDto);
+            try
+            {
+                Validate.ValidateModel(warningDto);
+                await publishEndpoint.Publish(warningDto);
+            }
+            catch (Exception publishEx)
+            {
+                WriteToConsole("Failed to publish WarningLogMessage", publishEx);
+            }
         }
 
         private static string ExtractMessage(string responseText)
@@ -180,6 +220,15 @@ namespace Library.API.Middleware
                 }
             }
             return warningMessage;
+        }
+
+        private static void WriteToConsole(string context, Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[LoggingMiddleware] {context}");
+            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.StackTrace);
+            Console.ResetColor();
         }
     }
 }

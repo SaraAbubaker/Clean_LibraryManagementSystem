@@ -2,30 +2,42 @@
 using Library.Infrastructure.Logging.Interfaces;
 using MassTransit;
 
-namespace Library.API.Consuming
+namespace Library.API.Consumer
 {
-    public class MessageLogsConsumer : IConsumer<MessageLogMessage>
+    public class ExceptionLogsConsumer :
+        IConsumer<ExceptionLogMessage>,
+        IConsumer<WarningLogMessage>
     {
-        private readonly IMessageLoggerService _messageLogger;
+        private readonly IExceptionLoggerService _logger;
         private readonly IFailedLoggerService _failedLogger;
 
-        public MessageLogsConsumer(IMessageLoggerService messageLogger, IFailedLoggerService failedLogger)
+        public ExceptionLogsConsumer(IExceptionLoggerService logger, IFailedLoggerService failedLogger)
         {
-            _messageLogger = messageLogger;
+            _logger = logger;
             _failedLogger = failedLogger;
         }
 
-        public async Task Consume(ConsumeContext<MessageLogMessage> context)
+        public async Task Consume(ConsumeContext<ExceptionLogMessage> context)
         {
             try
             {
-                // Normal path → log info message
-                await _messageLogger.LogInfoAsync(context.Message);
+                await _logger.LogExceptionAsync(context.Message);
             }
             catch (Exception ex)
             {
-                // Fallback → log failed entry
-                await LogFailedAsync("Message log failed", context.Message, nameof(MessageLogsConsumer), ex);
+                await LogFailedAsync("Exception log failed", context.Message, nameof(ExceptionLogsConsumer), ex);
+            }
+        }
+
+        public async Task Consume(ConsumeContext<WarningLogMessage> context)
+        {
+            try
+            {
+                await _logger.LogWarningAsync(context.Message);
+            }
+            catch (Exception ex)
+            {
+                await LogFailedAsync("Warning log failed", context.Message, nameof(ExceptionLogsConsumer), ex);
             }
         }
 

@@ -112,14 +112,14 @@ builder.Services.AddAuthentication(options =>
 
 
 // Authorization policies
-var authBuilder = builder.Services.AddAuthorizationBuilder();
-
-//Automatically add one policy per permission from shared constants
-foreach (var perm in PermissionNames.All)
+builder.Services.AddAuthorization(options =>
 {
-    authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
-}
-
+    foreach (var perm in PermissionNames.All)
+    {
+        options.AddPolicy(perm, policy =>
+            policy.RequireClaim("Permission", perm));
+    }
+});
 
 var app = builder.Build();
 

@@ -15,11 +15,11 @@ namespace Library.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Policy = PermissionNames.BookBasic)]
-    public class BooksController : ControllerBase
+    public class BookController : ControllerBase
     {
         private readonly IBookService _service;
 
-        public BooksController(IBookService service)
+        public BookController(IBookService service)
         {
             _service = service;
         }

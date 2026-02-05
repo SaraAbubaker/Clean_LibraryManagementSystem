@@ -33,8 +33,10 @@ namespace Library.UI.Controllers
 
             try
             {
-                var response = await _apiClient.GetQueryAsync
-                    <ApiResponse<List<UserTypeListMessage>>>(_apiSettings.Endpoints.UserType);
+                var response = await _apiClient.GetQueryAsync<ApiResponse<List<UserTypeListMessage>>>(
+                    _apiSettings.UserApi.Endpoints.UserType,
+                    apiName: "UserApi"
+                );
 
                 model.UserTypes = response?.Data ?? new();
             }
@@ -62,9 +64,10 @@ namespace Library.UI.Controllers
                 int currentUserId = GetUserHelper.GetCurrentUserId(User);
 
                 var response = await _apiClient.PostAsync(
-                    _apiSettings.Endpoints.UserType,
+                    _apiSettings.UserApi.Endpoints.UserType,
                     dto,
-                    currentUserId
+                    currentUserId,
+                    apiName: "UserApi"
                 );
 
                 if (!response.IsSuccessStatusCode)
@@ -86,45 +89,31 @@ namespace Library.UI.Controllers
 
         // POST: /UserType/UpdateUserType (AJAX)
         [HttpPost]
-        public async Task<IActionResult> UpdateUserType(
-            [FromBody] UpdateUserTypeMessage dto)
+        public async Task<IActionResult> UpdateUserType([FromBody] UpdateUserTypeMessage dto)
         {
             try
             {
                 int currentUserId = GetUserHelper.GetCurrentUserId(User);
 
                 var response = await _apiClient.PutAsync(
-                    _apiSettings.Endpoints.UserType,
+                    _apiSettings.UserApi.Endpoints.UserType,
                     dto.Id,
                     dto,
-                    currentUserId
+                    currentUserId,
+                    apiName: "UserApi"
                 );
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
-                    return Json(new
-                    {
-                        success = false,
-                        message = error
-                    });
+                    return Json(new { success = false, message = error });
                 }
 
-                return Json(new
-                {
-                    success = true,
-                    message = "User type updated successfully!",
-                    role = dto.Role,
-                    id = dto.Id
-                });
+                return Json(new { success = true, message = "User type updated successfully!", role = dto.Role, id = dto.Id });
             }
             catch (Exception ex)
             {
-                return Json(new
-                {
-                    success = false,
-                    message = ex.Message
-                });
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -137,35 +126,23 @@ namespace Library.UI.Controllers
                 int currentUserId = GetUserHelper.GetCurrentUserId(User);
 
                 var response = await _apiClient.PutArchiveAsync(
-                    _apiSettings.Endpoints.UserType,
+                    _apiSettings.UserApi.Endpoints.UserType,
                     id,
-                    currentUserId
+                    currentUserId,
+                    apiName: "UserApi"
                 );
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
-                    return Json(new
-                    {
-                        success = false,
-                        message = error
-                    });
+                    return Json(new { success = false, message = error });
                 }
 
-                return Json(new
-                {
-                    success = true,
-                    message = "User type archived successfully!",
-                    id
-                });
+                return Json(new { success = true, message = "User type archived successfully!", id });
             }
             catch (Exception ex)
             {
-                return Json(new
-                {
-                    success = false,
-                    message = ex.Message
-                });
+                return Json(new { success = false, message = ex.Message });
             }
         }
     }

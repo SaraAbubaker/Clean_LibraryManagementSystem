@@ -40,10 +40,14 @@ namespace Library.User.Seeder
             PermissionNames.UserBasic,
             PermissionNames.AuthorManage,
             PermissionNames.BookManage,
+            PermissionNames.BookBasic,
             PermissionNames.BorrowManage,
+            PermissionNames.BorrowBasic,
             PermissionNames.CategoryManage,
+            PermissionNames.CategoryBasic,
             PermissionNames.InventoryManage,
-            PermissionNames.PublisherManage
+            PermissionNames.PublisherManage,
+            PermissionNames.PublisherBasic
         };
 
         // Customer: self-service + limited view/borrow

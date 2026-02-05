@@ -2,7 +2,7 @@
 {
     public class ApiSettings
     {
-        public string BaseUrl { get; set; } = string.Empty;
-        public Endpoints Endpoints { get; set; } = new();
+        public UserApiSettings UserApi { get; set; } = new();
+        public LibraryApiSettings LibraryApi { get; set; } = new();
     }
 }

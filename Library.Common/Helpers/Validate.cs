@@ -26,7 +26,6 @@ namespace Library.Common.Helpers
             return entity;
         }
 
-
         public static void ValidateModel(object model)
         {
             if (model == null) throw new BadRequestException("Model cannot be null.");

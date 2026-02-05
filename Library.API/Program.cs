@@ -1,5 +1,5 @@
 
-using Library.API.Consuming;
+using Library.API.Consumer;
 using Library.Common.RabbitMqMessages.LoggingMessages;
 using Library.Common.StringConstants;
 using Library.Domain.Data;
@@ -18,6 +18,9 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,14 +105,65 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-// Authorization policies
-var authBuilder = builder.Services.AddAuthorizationBuilder();
-
-//Automatically add one policy per permission from shared constants
-foreach (var perm in PermissionNames.All)
+builder.Services.AddAuthentication(options =>
 {
-    authBuilder.AddPolicy(perm, policy => policy.RequireClaim("Permission", perm));
-}
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    // Allow non-HTTPS metadata in dev (important for localhost testing)
+    options.RequireHttpsMetadata = false;
+
+    var jwtKey = builder.Configuration["Jwt:Key"]
+                 ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtKey)
+        ),
+
+        // Prevent clock skew issues (default is 5 minutes)
+        ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            // This is for missing/invalid token
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"error\":\"Invalid or missing token\"}");
+        },
+        OnForbidden = context =>
+        {
+            // This is for valid token but insufficient permissions
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsync("{\"error\":\"User not authorized\"}");
+        }
+    };
+});
+
+
+// Authorization policies
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var perm in PermissionNames.All)
+    {
+        options.AddPolicy(perm, policy =>
+            policy.RequireClaim("Permission", perm));
+    }
+});
 
 var app = builder.Build();
 
@@ -152,6 +206,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Logging middleware after exception handler
