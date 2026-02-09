@@ -1,0 +1,80 @@
+﻿@model Library.UI.Models.BookViewModel
+
+<div id="booksTableContainer">
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Publisher</th>
+                <th>Publish Date</th>
+                <th>Available</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in Model.Books)
+            {
+                <tr id="bookRow-@book.Id">
+                    <td>@book.Id</td>
+                    <td class="title">@book.Title</td>
+                    <td>@book.AuthorName</td>
+                    <td>@book.CategoryName</td>
+                    <td>@book.PublisherName</td>
+                    <td>@book.PublishDate.ToString("dd-MM-yyyy")</td>
+                    <td>
+                        <span class="badge @(book.IsAvailable ? "bg-success" : "bg-danger")">
+                            @(book.IsAvailable ? "Yes" : "No")
+                        </span>
+                    </td>
+                    <td>
+                        @if (User.IsInRole("Librarian"))
+                        {
+                            <a href="#" class="btn btn-sm btn-primary update-btn" data-book-id="@book.Id">Update</a>
+                            <button type="button" class="btn btn-sm btn-danger archive-btn"
+                                    data-bs-toggle="modal" data-bs-target="#archiveModal" data-book-id="@book.Id">
+                                Archive
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="mb-2">Page @Model.Page of @Model.TotalPages</div>
+
+    <!-- Pagination controls -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Books pagination">
+            <ul class="pagination justify-content-center">
+
+                <!-- Previous -->
+                <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                    <a class="page-link" href="#" data-page="@(Model.Page - 1)">Previous</a>
+                </li>
+
+                <!-- Page numbers -->
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" href="#" data-page="@i">@i</a>
+                    </li>
+                }
+
+                <!-- Next -->
+                <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="#" data-page="@(Model.Page + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page x of y below pagination -->
+        <div class="text-center mb-3">
+            Page @Model.Page of @Model.TotalPages
+        </div>
+    }
+</div>

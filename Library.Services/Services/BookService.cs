@@ -173,7 +173,7 @@ namespace Library.Services.Services
             Validate.ValidateModel(searchDto);
 
             int page = Math.Max(1, searchDto.Page);
-            int pageSize = Math.Max(1, searchDto.PageSize);
+            int pageSize = searchDto.PageSize > 0 ? searchDto.PageSize : 5;
             int skip = (page - 1) * pageSize;
 
             var books = _bookRepo.GetAll()

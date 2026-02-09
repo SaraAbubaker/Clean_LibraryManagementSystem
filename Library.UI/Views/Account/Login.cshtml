@@ -26,10 +26,10 @@
         <button type="submit" class="btn btn-primary">Login</button>
     </div>
 
+    @* General ModelState errors *@
     @{
         var generalErrors = ViewData.ModelState[string.Empty]?.Errors;
     }
-
     @if (generalErrors?.Count > 0)
     {
         <div class="text-danger mt-2">
@@ -50,6 +50,7 @@
 
 @section Scripts {
     <script>
+        // Only toggle password visibility, do NOT prevent form submit
         const togglePassword = document.querySelector("#togglePassword");
         const passwordInput = document.querySelector("#passwordInput");
 

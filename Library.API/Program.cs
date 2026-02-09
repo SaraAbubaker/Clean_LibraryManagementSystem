@@ -21,6 +21,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Library.Seeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -215,5 +216,12 @@ app.MapControllers();
 
 var mongoContext = app.Services.GetRequiredService<MongoContext>();
 // mongoContext.CreateCollectionsIfNotExist(); // temporary, one-time creation of collections
+
+// Run seeders at startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<LibraryContext>();
+    await LibrarySeeder.SeedAllAsync(db);
+}
 
 app.Run();

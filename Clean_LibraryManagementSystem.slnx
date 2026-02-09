@@ -6,6 +6,7 @@
     <Project Path="Library.API/Library.API.csproj" Id="b46ef2e4-d97c-4146-a0c2-676d235d7a13" />
     <Project Path="Library.Domain/Library.Domain.csproj" Id="fb90bab9-24e0-4122-b74b-8c77de643034" />
     <Project Path="Library.Entities/Library.Entities.csproj" Id="170f163e-4232-4a95-9b20-325752943b02" />
+    <Project Path="Library.Seeder/Library.Seeder.csproj" Id="f3f992b7-5bb5-4f3e-96d4-5e0f035b5549" />
     <Project Path="Library.Services/Library.Services.csproj" Id="49771547-080b-42e5-b26a-2430b821fcbe" />
     <Project Path="Library.Shared/Library.Shared.csproj" Id="adeee9d1-6f11-4880-9062-e330a5f92dec" />
   </Folder>

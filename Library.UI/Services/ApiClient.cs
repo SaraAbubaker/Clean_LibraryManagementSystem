@@ -1,7 +1,4 @@
 using Library.UI.Helpers;
-using Library.UI.Models.String_constant;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text.Json;
@@ -12,16 +9,13 @@ namespace Library.UI.Services
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly ApiSettings _apiSettings;
 
         public ApiClient(
             IHttpClientFactory httpClientFactory,
-            IHttpContextAccessor httpContextAccessor,
-            IOptions<ApiSettings> apiSettings)
+            IHttpContextAccessor httpContextAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
-            _apiSettings = apiSettings.Value;
         }
 
         // ================== Core helper ==================
@@ -63,18 +57,18 @@ namespace Library.UI.Services
 
         // ================== Public API ==================
 
-        public async Task<T?> GetQueryAsync<T>(string basePath, string apiName = "LibraryApi")
-        {
-            var client = CreateClient(apiName);
-            var response = await client.GetAsync(ApiUrlBuilder.ForQuery(basePath));
-            response.EnsureSuccessStatusCode();
-            return await DeserializeAsync<T>(response);
-        }
-
         public async Task<T?> GetAsync<T>(string path, string apiName = "LibraryApi")
         {
             var client = CreateClient(apiName);
             var response = await client.GetAsync(path);
+            response.EnsureSuccessStatusCode();
+            return await DeserializeAsync<T>(response);
+        }
+
+        public async Task<T?> GetQueryAsync<T>(string basePath, string apiName = "LibraryApi")
+        {
+            var client = CreateClient(apiName);
+            var response = await client.GetAsync(ApiUrlBuilder.ForQuery(basePath));
             response.EnsureSuccessStatusCode();
             return await DeserializeAsync<T>(response);
         }

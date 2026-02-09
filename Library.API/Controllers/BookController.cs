@@ -99,16 +99,20 @@ namespace Library.API.Controllers
         //Search books with filters, paging, and sorting
         [HttpGet("query/search")]
         public async Task<IActionResult> SearchBooksQuery(
-            [FromQuery] SearchBookParamsDto filters,
+            [FromQuery] SearchBookParamsDto? filters,
             [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
             [FromQuery] BookSortBy sortBy = BookSortBy.Id,
             [FromQuery] SortDirection sortDir = SortDirection.Asc)
         {
             try
             {
+                filters ??= new SearchBookParamsDto();
+
                 var searchDto = new SearchParamsDto
                 {
                     Page = page,
+                    PageSize = pageSize,
                     SortBy = sortBy,
                     SortDir = sortDir
                 };

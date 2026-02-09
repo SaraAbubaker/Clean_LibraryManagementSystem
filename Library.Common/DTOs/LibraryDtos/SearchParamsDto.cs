@@ -9,7 +9,7 @@ namespace Library.Common.DTOs.LibraryDtos
 
         // Paging
         public int Page { get; set; } = 1;
-        public int PageSize { get; set; } = 3;
+        public int PageSize { get; set; } = 5;
 
         // Sorting
         public enum BookSortBy

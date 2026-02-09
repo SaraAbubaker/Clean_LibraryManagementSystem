@@ -8,6 +8,7 @@ using Library.UI.Models.String_constant;
 using Library.UI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 
 namespace Library.UI.Controllers
@@ -28,23 +29,45 @@ namespace Library.UI.Controllers
 
         // GET: /Book
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            int page = 1, int pageSize = 5,
+            string search = "", string filter = "",
+            bool ajax = false)
         {
             var model = new BookViewModel();
 
             try
             {
-                var response = await _apiClient.GetAsync<ApiPagedResponse<PagedResultDto<BookListDto>>>(
-                    _apiSettings.LibraryApi.Endpoints.Book + "/query/search?page=1",
-                    apiName: "LibraryApi"
-                );
+                pageSize = pageSize > 0 ? pageSize : 5;
+
+                var baseQueryUrl = ApiUrlBuilder.ForQuery(_apiSettings.LibraryApi.Endpoints.Book);
+
+                var queryParams = new Dictionary<string, string?>
+                {
+                    ["page"] = page.ToString(),
+                    ["pageSize"] = pageSize.ToString(),
+                    ["search"] = search,
+                    ["filter"] = filter
+                };
+
+                var finalUrl = QueryHelpers.AddQueryString($"{baseQueryUrl}/search", queryParams);
+
+                var response = await _apiClient.GetAsync<ApiResponse<PagedResultDto<BookListDto>>>(finalUrl, apiName: "LibraryApi");
 
                 model.Books = response?.Data?.Items ?? new List<BookListDto>();
+                model.TotalCount = response?.Data?.TotalCount ?? 0;
+                model.Page = page;
+                model.PageSize = pageSize;
+                model.Search = search;
+                model.Filter = filter;
             }
             catch (Exception ex)
             {
                 model.ErrorMessage = $"Failed to load books: {ex.Message}";
             }
+
+            if (ajax)
+                return PartialView("_BooksTablePartial", model);
 
             return View(model);
         }
