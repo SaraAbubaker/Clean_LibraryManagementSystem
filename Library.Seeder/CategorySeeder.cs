@@ -18,7 +18,12 @@ namespace Library.Seeder
                 new Category { Name = "Young Adult" },
                 new Category { Name = "Horror" },
                 new Category { Name = "Children's" },
-                new Category { Name = "Non-Fiction" }
+                new Category { Name = "Non-Fiction" },
+                new Category { Name = "Biography" },
+                new Category { Name = "History" },
+                new Category { Name = "Romance" },
+                new Category { Name = "Adventure" },
+                new Category { Name = "Thriller" }
             };
 
             foreach (var category in categories)

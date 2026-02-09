@@ -81,10 +81,69 @@
                     </div>
                     <div class="modal-body">
                         <form id="updateForm">
+                            <!-- Title -->
                             <div class="mb-3">
                                 <label for="updateTitle" class="form-label">Title</label>
                                 <input type="text" class="form-control" id="updateTitle" required />
                             </div>
+                            @*
+                            TODO: Author Update Feature
+
+                            Currently, updating a book only allows changing the title, publish date, and categories.
+
+                            - Updating authors is tricky because not every author exists in the system.
+                            - Future improvement idea:
+                            Option 2: Multi-select dropdown with "Add New Author" functionality.
+                            1. Keep a dropdown/multi-select of existing authors.
+                            2. Add a button or input field that allows the user to add a new author inline.
+                            3. When a new author is added, it gets created in the backend and immediately becomes selectable.
+                            4. On book update submission, link the selected/new authors to the book.
+
+                            Pros: Works well for books with multiple authors, flexible for new authors.
+                            Cons: Requires additional frontend JS and backend handling for author creation.
+
+                            For now, author editing is disabled in the update modal.
+                            *@
+
+                            <!-- Categories (radio, scrollable) -->
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <div id="updateCategoriesContainer"
+                                     style="max-height: 180px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.25rem;">
+                                    @foreach (var category in Model.Categories)
+                                    {
+                                        <div class="form-check mb-1">
+                                            <input class="form-check-input update-category-radio"
+                                                   type="radio"
+                                                   name="updateCategory"
+                                                   id="updateCategory-@category.Id"
+                                                   value="@category.Id">
+                                            <label class="form-check-label" for="updateCategory-@category.Id">@category.Name</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            @*
+                            TODO: Publisher Update Feature
+
+                            Currently, updating a book only allows changing the title, publish date, and categories.
+
+                            - Updating the publisher is tricky because the publisher might not exist yet in the system.
+                            - Future improvement idea:
+                            Option: Multi-select or searchable dropdown with "Add New Publisher" functionality.
+                            1. Keep a dropdown of existing publishers.
+                            2. Add a button or input field that allows the user to add a new publisher inline.
+                            3. When a new publisher is added, it gets created in the backend and immediately becomes selectable.
+                            4. On book update submission, link the selected/new publisher to the book.
+
+                            Pros: Flexible for new publishers, supports changing publisher easily.
+                            Cons: Requires extra frontend JS and backend handling for publisher creation.
+
+                            For now, publisher editing is disabled in the update modal.
+                            *@
+
+                            <!--Publish Date Calendar-->
                             <div class="mb-3">
                                 <label for="updatePublishDate" class="form-label">Publish Date</label>
                                 <input type="date" class="form-control" id="updatePublishDate" />

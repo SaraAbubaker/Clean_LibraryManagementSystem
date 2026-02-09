@@ -1,6 +1,7 @@
 using Library.Common.DTOs.ApiResponseDtos;
 using Library.Common.DTOs.LibraryDtos;
 using Library.Common.DTOs.LibraryDtos.Book;
+using Library.Common.DTOs.LibraryDtos.Category;
 using Library.Common.StringConstants;
 using Library.UI.Helpers;
 using Library.UI.Models;
@@ -60,6 +61,12 @@ namespace Library.UI.Controllers
                 model.PageSize = pageSize;
                 model.Search = search;
                 model.Filter = filter;
+
+                var categoryResponse = await _apiClient.GetQueryAsync<ApiResponse<List<CategoryListDto>>>(
+                    _apiSettings.LibraryApi.Endpoints.Category);
+
+                model.Categories = categoryResponse?.Data ?? new List<CategoryListDto>();
+
             }
             catch (Exception ex)
             {

@@ -29,6 +29,14 @@
 
     const updateTitleInput = document.getElementById("updateTitle");
     const updateBookIdInput = document.getElementById("updateBookId");
+    const updatePublishDateInput = document.getElementById("updatePublishDate");
+
+    /* ================= ARCHIVE MODAL FIX ================= */
+    archiveModalEl?.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const bookId = button.getAttribute('data-book-id');
+        document.getElementById("archiveBookId").value = bookId;
+    });
 
     /* ================= EVENT DELEGATION ================= */
     document.addEventListener("click", function (e) {
@@ -39,21 +47,40 @@
             e.preventDefault();
             const row = updateBtn.closest("tr");
             const id = updateBtn.dataset.bookId;
-            const title = row.querySelector(".title").textContent;
 
-            updateTitleInput.value = title;
+            // Fill book ID and title
             updateBookIdInput.value = id;
+            updateTitleInput.value = row.querySelector(".title").textContent.trim();
 
-            new bootstrap.Modal(updateModalEl).show();
-            return;
-        }
+            // Fill category (single radio by name)
+            const categoryRadios = document.querySelectorAll(".update-category-radio");
+            const categoryName = (row.dataset.category || "").trim();
 
-        // -------- ARCHIVE BUTTON ----------
-        const archiveBtn = e.target.closest(".archive-btn");
-        if (archiveBtn) {
-            e.preventDefault();
-            document.getElementById("archiveBookId").value = archiveBtn.dataset.bookId;
-            new bootstrap.Modal(archiveModalEl).show();
+            categoryRadios.forEach(radio => {
+                const labelText = radio.nextElementSibling?.textContent?.trim() || "";
+                radio.checked = labelText === categoryName;
+            });
+
+            // Fill publish date
+            const publishDateText = row.querySelector("td[data-publish-date]")?.dataset.publishDate;
+            if (publishDateText) {
+                updatePublishDateInput.value = publishDateText;
+            }
+
+            // Show modal
+            const modalInstance = new bootstrap.Modal(updateModalEl);
+            modalInstance.show();
+
+            // Scroll selected category into view after modal is fully shown
+            updateModalEl.addEventListener('shown.bs.modal', function handler() {
+                const container = document.getElementById("updateCategoriesContainer");
+                const selectedRadio = container.querySelector(".update-category-radio:checked");
+                if (selectedRadio) {
+                    selectedRadio.scrollIntoView({ block: "center", behavior: "smooth" });
+                }
+                updateModalEl.removeEventListener('shown.bs.modal', handler);
+            });
+
             return;
         }
 
@@ -62,7 +89,7 @@
         if (pageLink && pageLink.dataset.page) {
             e.preventDefault();
             const page = parseInt(pageLink.dataset.page);
-            const pageSize = parseInt(document.getElementById("pageSizeSelect").value);
+            const pageSize = parseInt(document.getElementById("pageSizeSelect")?.value || 5);
             loadBooks(page, pageSize);
             return;
         }
@@ -80,10 +107,21 @@
             return;
         }
 
+        // Single category radio
+        const selectedCategoryId = document.querySelector(".update-category-radio:checked")?.value;
+        if (!selectedCategoryId) {
+            showMessage("Please select a category.", false);
+            return;
+        }
+
         fetch(`/Book/UpdateBook/${id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Id: id, Title: title })
+            body: JSON.stringify({
+                Id: id,
+                Title: title,
+                CategoryId: parseInt(selectedCategoryId) // ensure number
+            })
         })
             .then(r => r.json())
             .then(data => {
@@ -124,11 +162,9 @@
 
     /* ================= PAGE SIZE CHANGE ================= */
     const pageSizeSelect = document.getElementById("pageSizeSelect");
-    if (pageSizeSelect) {
-        pageSizeSelect.addEventListener("change", function () {
-            loadBooks(1, parseInt(this.value)); // Reset to page 1
-        });
-    }
+    pageSizeSelect?.addEventListener("change", function () {
+        loadBooks(1, parseInt(this.value));
+    });
 
     /* ================= AJAX LOAD FUNCTION ================= */
     function loadBooks(page, pageSize) {
@@ -145,18 +181,12 @@
 
                 const newTable = doc.getElementById("booksTableContainer");
                 const oldTable = document.getElementById("booksTableContainer");
-                if (newTable && oldTable) {
-                    oldTable.replaceWith(newTable);
-                }
+                if (newTable && oldTable) oldTable.replaceWith(newTable);
 
-                // Replace pagination 
                 const newPagination = doc.querySelector("nav[aria-label='Books pagination']");
                 const oldPagination = document.querySelector("nav[aria-label='Books pagination']");
-                if (newPagination && oldPagination) {
-                    oldPagination.replaceWith(newPagination);
-                }
+                if (newPagination && oldPagination) oldPagination.replaceWith(newPagination);
 
-                // Update currentPage hidden input
                 let currentPageInput = document.getElementById("currentPage");
                 if (!currentPageInput) {
                     currentPageInput = document.createElement("input");
@@ -168,7 +198,6 @@
             })
             .catch(err => showMessage("Failed to load page: " + err, false));
     }
-
 
     function getCurrentPage() {
         return parseInt(document.getElementById("currentPage")?.value || 1);

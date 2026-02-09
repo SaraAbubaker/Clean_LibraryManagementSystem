@@ -1,4 +1,5 @@
 ﻿using Library.Common.DTOs.LibraryDtos.Book;
+using Library.Common.DTOs.LibraryDtos.Category;
 
 namespace Library.UI.Models
 {
@@ -15,5 +16,8 @@ namespace Library.UI.Models
 
         public string? Search { get; set; }
         public string? Filter { get; set; }
+
+        public List<CategoryListDto> Categories { get; set; } = new(); // all categories for the dropdown
+
     }
 }
