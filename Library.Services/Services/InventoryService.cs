@@ -4,6 +4,7 @@ using Library.Services.Interfaces;
 using Library.Domain.Repositories;
 using Library.Entities.Models;
 using Library.Common.Helpers;
+using Library.Shared.Helper;
 
 namespace Library.Services.Services
 {
@@ -37,13 +38,29 @@ namespace Library.Services.Services
                 bookId
             );
 
-            string prefix = CopyCodeGeneratorHelper.GenerateBookPrefix(book.Title);
+            // Get highest existing copy number
+            int maxNumber = 0;
 
-            int nextNumber = book.InventoryRecords.Any()
-                ? book.InventoryRecords.Count + 1
-                : 1;
+            if (book.InventoryRecords.Any())
+            {
+                foreach (var copy in book.InventoryRecords)
+                {
+                    var match = System.Text.RegularExpressions.Regex
+                        .Match(copy.CopyCode, @"-(\d{2})$");
 
-            string copyCode = $"{prefix}-{nextNumber:00}";
+                    if (match.Success)
+                    {
+                        int number = int.Parse(match.Groups[1].Value);
+                        if (number > maxNumber)
+                            maxNumber = number;
+                    }
+                }
+            }
+
+            int nextNumber = maxNumber + 1;
+
+            string copyCode = CopyCodeGeneratorHelper
+                .GenerateCopyCode(book.Title, book.Id, nextNumber);
 
             var record = new InventoryRecord
             {

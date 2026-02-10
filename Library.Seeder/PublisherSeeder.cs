@@ -22,7 +22,8 @@ namespace Library.Seeder
                 new Publisher { Name = "Avery" },
                 new Publisher { Name = "Little, Brown" },
                 new Publisher { Name = "Charles Scribner's Sons" },
-                new Publisher { Name = "Allen & Unwin" }
+                new Publisher { Name = "Allen & Unwin" },
+                new Publisher { Name = "Galaxy Press" }
             };
 
             foreach (var publisher in publishers)

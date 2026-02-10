@@ -10,7 +10,9 @@ namespace Library.Seeder
             await CategorySeeder.SeedAsync(db);
             await PublisherSeeder.SeedAsync(db);
             await BookSeeder.SeedAsync(db);
-            // optionally: InventoryRecordSeeder.SeedAsync(db);
+
+            //call when you want a new copy of for a new book
+            //await InventorySeeder.SeedAsync(db); 
         }
     }
 }

@@ -1,92 +1,47 @@
-﻿/* ================= Table Layout Fixes ================= */
-
-/* Make table full width and prevent column resizing on content */
-#booksTableContainer table {
+﻿#booksTableContainer table {
     width: 100%;
-    table-layout: fixed; /* forces fixed column widths */
-    word-wrap: break-word; /* wrap long text instead of expanding cells */
+    max-width: 100%;
+    table-layout: fixed;
+    overflow-wrap: break-word;
 }
 
-/* Ensure header cells align with body cells */
 #booksTableContainer th,
 #booksTableContainer td {
-    text-align: center; /* or left/right as desired per column */
+    text-align: center;
     vertical-align: middle;
-    overflow: hidden; /* hide overflow text */
-    white-space: nowrap; /* prevent row height from growing */
-    text-overflow: ellipsis; /* show "..." if text too long */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-    /* Optional: allow wrapping only for title column */
     #booksTableContainer td.title {
-        white-space: normal; /* wrap titles if too long */
+        white-space: normal;
+        overflow-wrap: break-word;
         text-align: left;
+        max-width: 300px; /* wrap when width > 200px */
+        min-width: 100px; /* optional baseline width */
+        padding: 0.5rem;
     }
 
-/* Fix consistent row height */
+    #booksTableContainer td.publisher {
+        white-space: normal;
+        overflow-wrap: break-word;
+        text-align: left;
+        max-width: 100px; /* wrap when content > 100px */
+        padding: 0.5rem;
+    }
+
 #booksTableContainer tbody tr {
-    height: 50px; /* adjust to your preference */
+    min-height: 40px;
 }
 
-/* Keep pagination and page info centered at bottom */
+/* Pagination & buttons remain the same */
 #booksTableContainer .pagination,
 #booksTableContainer .mb-2 {
     margin-top: 1rem;
     text-align: center;
 }
 
-/* Optional: fix table responsiveness for smaller screens */
-@media (max-width: 768px) {
-    #booksTableContainer table {
-        font-size: 0.9rem;
-    }
-
-    #booksTableContainer td, #booksTableContainer th {
-        padding: 0.4rem;
-    }
-}
-
-/* ================= BOOKS TABLE BUTTON SPACING ================= */
 #booksTableContainer td .btn {
-    margin: 2px 1px; /* space between Update / Archive buttons */
-}
-
-/* Optional: limit title width and ellipsis for very long titles */
-#booksTableContainer td.title {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Responsive adjustments for mobile */
-@media (max-width: 768px) {
-    #booksTableContainer table,
-    #booksTableContainer thead,
-    #booksTableContainer tbody,
-    #booksTableContainer th,
-    #booksTableContainer td,
-    #booksTableContainer tr {
-        display: block;
-    }
-
-    #booksTableContainer tr {
-        margin-bottom: 15px;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    #booksTableContainer td {
-        text-align: right;
-        padding-left: 50%;
-        position: relative;
-    }
-
-        #booksTableContainer td::before {
-            content: attr(data-label);
-            position: absolute;
-            left: 0;
-            width: 45%;
-            padding-left: 10px;
-            font-weight: bold;
-            text-align: left;
-        }
+    margin: 2px 1px;
 }

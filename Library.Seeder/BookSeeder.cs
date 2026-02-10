@@ -39,7 +39,8 @@ namespace Library.Seeder
                 CreateBook("Atomic Habits",                            new DateOnly(2018, 10, 16), "James Clear",          "Non-Fiction",     "Avery"),
                 CreateBook("The Land of Stories: The Wishing Spell",   new DateOnly(2012, 7, 17),  "Chris Colfer",         "Fantasy",         "Little, Brown"),
                 CreateBook("The Great Gatsby",                         new DateOnly(1925, 4, 10),  "F. Scott Fitzgerald",  "Classics",        "Charles Scribner's Sons"),
-                CreateBook("The Hobbit",                               new DateOnly(1937, 9, 21),  "J.R.R. Tolkien",       "Fantasy",         "Allen & Unwin")
+                CreateBook("The Hobbit",                               new DateOnly(1937, 9, 21),  "J.R.R. Tolkien",       "Fantasy",         "Allen & Unwin"),
+                CreateBook("The Secrets of Time",                      new DateOnly(2024, 10, 15), "John Smith",           "Science Fiction", "Galaxy Press")
 
             };
 

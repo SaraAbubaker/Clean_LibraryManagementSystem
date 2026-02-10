@@ -22,7 +22,8 @@ namespace Library.Seeder
                 new Author { Name = "James Clear" },
                 new Author { Name = "Chris Colfer" },
                 new Author { Name = "F. Scott Fitzgerald" },
-                new Author { Name = "J.R.R. Tolkien" }
+                new Author { Name = "J.R.R. Tolkien" },
+                new Author { Name = "John Smith" }
             };
 
             foreach (var author in authors)

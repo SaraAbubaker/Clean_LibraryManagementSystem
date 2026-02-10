@@ -1,4 +1,4 @@
-﻿namespace Library.Common.Helpers
+﻿namespace Library.Shared.Helper
 {
     public static class CopyCodeGeneratorHelper
     {
@@ -39,5 +39,11 @@
             return prefix;
         }
 
+        public static string GenerateCopyCode(string title, int bookId, int copyNumber)
+        {
+            var prefix = GenerateBookPrefix(title);
+
+            return $"{prefix}-{bookId}-{copyNumber:00}";
+        }
     }
 }

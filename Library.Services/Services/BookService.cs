@@ -8,6 +8,7 @@ using Mapster;
 using Library.Common.Helpers;
 using Library.Common.DTOs.LibraryDtos.Book;
 using Library.Common.DTOs.LibraryDtos;
+using Library.Shared.Helper;
 
 namespace Library.Services.Services
 {

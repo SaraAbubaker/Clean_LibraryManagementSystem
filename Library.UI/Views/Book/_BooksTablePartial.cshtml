@@ -28,7 +28,7 @@
                     <td class="title">@book.Title</td>
                     <td>@book.AuthorName</td>
                     <td>@book.CategoryName</td>
-                    <td>@book.PublisherName</td>
+                    <td class="publisher">@book.PublisherName</td>
                     <td>@book.PublishDate.ToString("dd-MMM-yyyy")</td>
                     <td>
                         <span class="badge @(book.IsAvailable ? "bg-success" : "bg-danger")">
