@@ -1,4 +1,5 @@
 ﻿using Library.Common.StringConstants;
+using Library.UI.Helpers;
 using Library.UI.Models.String_constant;
 using Library.UI.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -49,6 +50,7 @@ builder.Services.AddHttpClient("Library.LibraryApi")
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IApiClient, ApiClient>();
+builder.Services.AddScoped<ILibraryDataHelper, LibraryDataHelper>();
 
 // ================== AUTH ==================
 

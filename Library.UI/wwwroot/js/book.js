@@ -18,7 +18,11 @@
         if (instance) instance.hide();
         document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
         document.body.classList.remove('modal-open');
+
+        // Make sure no buttons are stuck disabled
+        modalEl.querySelectorAll('button[type="submit"]').forEach(btn => btn.disabled = false);
     }
+
 
     /* ================= MODAL ELEMENTS ================= */
     const updateModalEl = document.getElementById("updateModal");
@@ -27,9 +31,19 @@
     const updateForm = document.getElementById("updateForm");
     const archiveForm = document.getElementById("archiveForm");
 
+    /* ================= RESET UPDATE BUTTON ON MODAL OPEN ================= */
+    updateModalEl?.addEventListener('show.bs.modal', function () {
+        const submitBtn = updateModalEl.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;       // ensure enabled
+            submitBtn.classList.remove("disabled"); // remove Bootstrap grey styling
+        }
+    });
+
     const updateTitleInput = document.getElementById("updateTitle");
     const updateBookIdInput = document.getElementById("updateBookId");
     const updatePublishDateInput = document.getElementById("updatePublishDate");
+
 
     /* ================= ARCHIVE MODAL FIX ================= */
     archiveModalEl?.addEventListener('show.bs.modal', function (event) {
@@ -52,14 +66,10 @@
             updateBookIdInput.value = id;
             updateTitleInput.value = row.querySelector(".title").textContent.trim();
 
-            // Fill category (single radio by name)
-            const categoryRadios = document.querySelectorAll(".update-category-radio");
-            const categoryName = (row.dataset.category || "").trim();
-
-            categoryRadios.forEach(radio => {
-                const labelText = radio.nextElementSibling?.textContent?.trim() || "";
-                radio.checked = labelText === categoryName;
-            });
+            // Prefill category select
+            const categorySelect = document.getElementById("updateCategorySelect");
+            const categoryId = row.dataset.categoryId; // Make sure your <tr> has data-category-id
+            if (categoryId) categorySelect.value = categoryId;
 
             // Fill publish date
             const publishDateText = row.querySelector("td[data-publish-date]")?.dataset.publishDate;
@@ -89,7 +99,7 @@
         if (pageLink && pageLink.dataset.page) {
             e.preventDefault();
             const page = parseInt(pageLink.dataset.page);
-            const pageSize = parseInt(document.getElementById("pageSizeSelect")?.value || 5);
+            const pageSize = parseInt(document.getElementById("pageSizeSelect")?.value || 10);
             loadBooks(page, pageSize);
             return;
         }
@@ -99,18 +109,26 @@
     updateForm?.addEventListener("submit", function (e) {
         e.preventDefault();
 
+        const submitBtn = updateForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true; // disable button while submitting
+        submitBtn.classList.add("disabled"); // optional, remove grey effect if needed
+
         const id = parseInt(updateBookIdInput.value);
         const title = updateTitleInput.value.trim();
 
         if (!title) {
             showMessage("Title is required", false);
+            submitBtn.disabled = false; // re-enable immediately
+            submitBtn.classList.remove("disabled");
             return;
         }
 
-        // Single category radio
-        const selectedCategoryId = document.querySelector(".update-category-radio:checked")?.value;
+        // Selected category from dropdown
+        const selectedCategoryId = document.getElementById("updateCategorySelect").value;
         if (!selectedCategoryId) {
             showMessage("Please select a category.", false);
+            submitBtn.disabled = false;
+            submitBtn.classList.remove("disabled");
             return;
         }
 
@@ -125,6 +143,9 @@
         })
             .then(r => r.json())
             .then(data => {
+                submitBtn.disabled = false; // re-enable button
+                submitBtn.classList.remove("disabled");
+
                 if (data.success) {
                     loadBooks(getCurrentPage(), getCurrentPageSize());
                     closeModal(updateModalEl);
@@ -133,8 +154,13 @@
                     showMessage(data.message, false);
                 }
             })
-            .catch(err => showMessage("Unexpected error: " + err, false));
+            .catch(err => {
+                submitBtn.disabled = false; // re-enable on error
+                submitBtn.classList.remove("disabled");
+                showMessage("Unexpected error: " + err, false);
+            });
     });
+
 
     /* ================= ARCHIVE FORM SUBMIT ================= */
     archiveForm?.addEventListener("submit", function (e) {
@@ -204,7 +230,7 @@
     }
 
     function getCurrentPageSize() {
-        return parseInt(document.getElementById("pageSizeSelect")?.value || 5);
+        return parseInt(document.getElementById("pageSizeSelect")?.value || 10);
     }
 
 });

@@ -1,7 +1,6 @@
 using Library.Common.DTOs.ApiResponseDtos;
 using Library.Common.DTOs.LibraryDtos;
 using Library.Common.DTOs.LibraryDtos.Book;
-using Library.Common.DTOs.LibraryDtos.Category;
 using Library.Common.StringConstants;
 using Library.UI.Helpers;
 using Library.UI.Models;
@@ -14,24 +13,27 @@ using Microsoft.Extensions.Options;
 
 namespace Library.UI.Controllers
 {
-    [Authorize(Policy = PermissionNames.BookManage)]
+    [Authorize(Policy = PermissionNames.BookBasic)]
     public class BookController : Controller
     {
         private readonly IApiClient _apiClient;
         private readonly ApiSettings _apiSettings;
+        private readonly ILibraryDataHelper _libraryDataHelper;
 
         public BookController(
             IApiClient apiClient,
-            IOptions<ApiSettings> apiSettings)
+            IOptions<ApiSettings> apiSettings,
+            ILibraryDataHelper libraryDataHelper)
         {
             _apiClient = apiClient;
             _apiSettings = apiSettings.Value;
+            _libraryDataHelper = libraryDataHelper;
         }
 
-        // GET: /Book
+        //GET: /Book 
         [HttpGet]
         public async Task<IActionResult> Index(
-            int page = 1, int pageSize = 5,
+            int page = 1, int pageSize = 10,
             string search = "", string filter = "",
             bool ajax = false)
         {
@@ -39,7 +41,7 @@ namespace Library.UI.Controllers
 
             try
             {
-                pageSize = pageSize > 0 ? pageSize : 5;
+                pageSize = pageSize > 0 ? pageSize : 10;
 
                 var baseQueryUrl = ApiUrlBuilder.ForQuery(_apiSettings.LibraryApi.Endpoints.Book);
 
@@ -51,6 +53,7 @@ namespace Library.UI.Controllers
                     ["filter"] = filter
                 };
 
+                //appends search params
                 var finalUrl = QueryHelpers.AddQueryString($"{baseQueryUrl}/search", queryParams);
 
                 var response = await _apiClient.GetAsync<ApiResponse<PagedResultDto<BookListDto>>>(finalUrl, apiName: "LibraryApi");
@@ -62,11 +65,8 @@ namespace Library.UI.Controllers
                 model.Search = search;
                 model.Filter = filter;
 
-                var categoryResponse = await _apiClient.GetQueryAsync<ApiResponse<List<CategoryListDto>>>(
-                    _apiSettings.LibraryApi.Endpoints.Category);
-
-                model.Categories = categoryResponse?.Data ?? new List<CategoryListDto>();
-
+                //Load categories (for filtering or display)
+                model.Categories = await _libraryDataHelper.GetCategoriesAsync();
             }
             catch (Exception ex)
             {
@@ -79,16 +79,34 @@ namespace Library.UI.Controllers
             return View(model);
         }
 
-        // GET: /Book/CreateBook
+        //GET: /Book/CreateBook
         [HttpGet]
-        public IActionResult CreateBook() => View(new CreateBookDto());
+        [Authorize(Policy = PermissionNames.BookManage)]
+        public async Task<IActionResult> CreateBook()
+        {
+            var model = new CreateBookDto();
 
-        // POST: /Book/CreateBook
+            //Load categories, publishers, and Authors as SelectLists
+            ViewBag.Categories = await _libraryDataHelper.GetCategoriesSelectListAsync();
+            ViewBag.Publishers = await _libraryDataHelper.GetPublishersSelectListAsync();
+            ViewBag.Authors = await _libraryDataHelper.GetAuthorsSelectListAsync();
+
+            return View(model);
+        }
+
+        //POST: /Book/CreateBook
         [HttpPost]
+        [Authorize(Policy = PermissionNames.BookManage)]
         public async Task<IActionResult> CreateBook(CreateBookDto dto)
         {
             if (!ModelState.IsValid)
+            {
+                //Reload dropdowns if validation fails
+                ViewBag.Categories = await _libraryDataHelper.GetCategoriesSelectListAsync(dto.CategoryId);
+                ViewBag.Publishers = await _libraryDataHelper.GetPublishersSelectListAsync(dto.PublisherId);
+                ViewBag.Authors = await _libraryDataHelper.GetAuthorsSelectListAsync(dto.AuthorId);
                 return View(dto);
+            }
 
             try
             {
@@ -105,6 +123,12 @@ namespace Library.UI.Controllers
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     ModelState.AddModelError("", error);
+
+                    //Reload dropdowns
+                    ViewBag.Categories = await _libraryDataHelper.GetCategoriesSelectListAsync(dto.CategoryId);
+                    ViewBag.Publishers = await _libraryDataHelper.GetPublishersSelectListAsync(dto.PublisherId);
+                    ViewBag.Authors = await _libraryDataHelper.GetAuthorsSelectListAsync(dto.AuthorId);
+
                     return View(dto);
                 }
 
@@ -114,12 +138,19 @@ namespace Library.UI.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"Unexpected error: {ex.Message}");
+
+                // Reload dropdowns
+                ViewBag.Categories = await _libraryDataHelper.GetCategoriesSelectListAsync(dto.CategoryId);
+                ViewBag.Publishers = await _libraryDataHelper.GetPublishersSelectListAsync(dto.PublisherId);
+                ViewBag.Authors = await _libraryDataHelper.GetAuthorsSelectListAsync(dto.AuthorId);
+
                 return View(dto);
             }
         }
 
-        // POST: /Book/UpdateBook (AJAX)
+        //POST: /Book/UpdateBook (AJAX)
         [HttpPost]
+        [Authorize(Policy = PermissionNames.BookManage)]
         public async Task<IActionResult> UpdateBook([FromBody] UpdateBookDto dto)
         {
             try
@@ -148,8 +179,9 @@ namespace Library.UI.Controllers
             }
         }
 
-        // POST: /Book/ArchiveBook (AJAX)
+        //POST: /Book/ArchiveBook (AJAX)
         [HttpPost]
+        [Authorize(Policy = PermissionNames.BookManage)]
         public async Task<IActionResult> ArchiveBook([FromBody] int id)
         {
             try

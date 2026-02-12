@@ -1,47 +1,195 @@
-﻿#booksTableContainer table {
-    width: 100%;
-    max-width: 100%;
-    table-layout: fixed;
-    overflow-wrap: break-word;
-}
-
-#booksTableContainer th,
-#booksTableContainer td {
-    text-align: center;
-    vertical-align: middle;
+﻿/* Container */
+#booksTableContainer {
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background-color: #ffffff;
 }
 
-    #booksTableContainer td.title {
-        white-space: normal;
-        overflow-wrap: break-word;
-        text-align: left;
-        max-width: 300px; /* wrap when width > 200px */
-        min-width: 100px; /* optional baseline width */
-        padding: 0.5rem;
+    /* Table */
+    #booksTableContainer table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        word-wrap: break-word;
     }
 
-    #booksTableContainer td.publisher {
-        white-space: normal;
-        overflow-wrap: break-word;
-        text-align: left;
-        max-width: 100px; /* wrap when content > 100px */
-        padding: 0.5rem;
+    /* Header */
+    #booksTableContainer th {
+        background-color: #6c757d;
+        color: #fff;
+        font-weight: 600;
+        text-align: center; /* headers centered */
+        padding: 12px 15px;
     }
 
-#booksTableContainer tbody tr {
-    min-height: 40px;
-}
+    /* Rounded header corners */
+    #booksTableContainer thead tr:first-child th:first-child {
+        border-top-left-radius: 12px;
+    }
 
-/* Pagination & buttons remain the same */
-#booksTableContainer .pagination,
-#booksTableContainer .mb-2 {
+    #booksTableContainer thead tr:first-child th:last-child {
+        border-top-right-radius: 12px;
+    }
+
+    /* Column widths using percentages */
+    #booksTableContainer th:first-child,
+    #booksTableContainer td:first-child {
+        width: 5%; /* ID */
+    }
+
+    #booksTableContainer th:nth-child(2),
+    #booksTableContainer td:nth-child(2) {
+        width: 18%; /* Title */
+    }
+
+    #booksTableContainer th:nth-child(3),
+    #booksTableContainer td:nth-child(3) {
+        width: 15%; /* Author */
+    }
+
+    #booksTableContainer th:nth-child(4),
+    #booksTableContainer td:nth-child(4) {
+        width: 12%; /* Category */
+    }
+
+    #booksTableContainer th:nth-child(5),
+    #booksTableContainer td:nth-child(5) {
+        width: 15%; /* Publisher */
+    }
+
+    #booksTableContainer th:nth-child(6),
+    #booksTableContainer td:nth-child(6) {
+        width: 10%; /* Publish Date */
+    }
+
+    /* Available column */
+    #booksTableContainer th:nth-child(7),
+    #booksTableContainer td:nth-child(7) {
+        width: 10%; /* Available badge */
+    }
+
+    /* Actions column */
+    #booksTableContainer th:last-child,
+    #booksTableContainer td:last-child {
+        width: 15%; /* Update + Archive buttons */
+        white-space: nowrap;
+    }
+
+    /* Body cells */
+    #booksTableContainer td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        text-align: center;
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+        /* Wrap text for title/publisher */
+        #booksTableContainer td.title,
+        #booksTableContainer td.publisher {
+            white-space: normal;
+            overflow-wrap: break-word;
+        }
+
+        /* Smaller Available badge */
+        #booksTableContainer td span.badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            display: inline-block;
+            text-align: center;
+            min-width: 30px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+    /* Smaller buttons */
+    #booksTableContainer .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+    }
+
+    /* Alternating row colors */
+    #booksTableContainer tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    /* Row hover */
+    #booksTableContainer tbody tr:hover {
+        background-color: #e9ecef;
+        transition: background-color 0.3s;
+    }
+
+    /* Row min-height */
+    #booksTableContainer tbody tr {
+        min-height: 40px;
+    }
+
+    /* Buttons inside table */
+    #booksTableContainer .btn {
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        margin: 2px 1px;
+        font-weight: 500;
+        border: none;
+    }
+
+    /* Button colors */
+    #booksTableContainer .btn-success {
+        background-color: #28a745;
+        color: #fff;
+    }
+
+        #booksTableContainer .btn-success:hover {
+            background-color: #218838;
+        }
+
+    #booksTableContainer .btn-primary {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+        #booksTableContainer .btn-primary:hover {
+            background-color: #0069d9;
+        }
+
+    #booksTableContainer .btn-danger {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+        #booksTableContainer .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+/* Pagination outside table */
+#booksPagination {
     margin-top: 1rem;
     text-align: center;
 }
 
-#booksTableContainer td .btn {
-    margin: 2px 1px;
+/* Available column: colored text without badge box */
+#booksTableContainer td span.badge {
+    background: none !important; /* remove background */
+    padding: 0 !important; /* remove padding */
+    border-radius: 0 !important; /* remove rounded corners */
+    display: inline !important; /* inline text */
+    font-weight: 600; /* slightly bold */
+    font-size: 0.9rem !important; /* font */
+}
+
+/* Specific colors for Yes / No */
+#booksTableContainer td span.bg-success {
+    color: #28a745; /* green for Yes */
+}
+
+#booksTableContainer td span.bg-danger {
+    color: #dc3545; /* red for No */
 }

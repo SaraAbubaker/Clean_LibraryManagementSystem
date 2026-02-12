@@ -78,33 +78,51 @@ builder.Services.AddSingleton<IFailedLoggerService, FailedLoggerService>();
 // MassTransit setup
 var rabbitMqSettings = builder.Configuration
     .GetSection("RabbitMqSettings")
-    .Get<RabbitMqSettings>()
-    ?? throw new InvalidOperationException("RabbitMQ settings missing");
+    .Get<RabbitMqSettings>();
 
-builder.Services.AddMassTransit(x =>
+bool useRabbitMq = false; // set to true to enable RabbitMQ
+
+if (useRabbitMq && rabbitMqSettings != null)
 {
-    x.AddConsumer<ExceptionLogsConsumer>();
-    x.AddConsumer<MessageLogsConsumer>();
-
-    x.UsingRabbitMq((context, cfg) =>
+    builder.Services.AddMassTransit(x =>
     {
-        cfg.Host(rabbitMqSettings.HostName, h =>
-        {
-            h.Username(rabbitMqSettings.UserName);
-            h.Password(rabbitMqSettings.Password);
-        });
+        x.AddConsumer<ExceptionLogsConsumer>();
+        x.AddConsumer<MessageLogsConsumer>();
 
-        cfg.ReceiveEndpoint(rabbitMqSettings.ExceptionQueue, e =>
+        x.UsingRabbitMq((context, cfg) =>
         {
-            e.ConfigureConsumer<ExceptionLogsConsumer>(context);
-        });
+            cfg.Host(rabbitMqSettings.HostName, h =>
+            {
+                h.Username(rabbitMqSettings.UserName);
+                h.Password(rabbitMqSettings.Password);
+            });
 
-        cfg.ReceiveEndpoint(rabbitMqSettings.MessageQueue, e =>
-        {
-            e.ConfigureConsumer<MessageLogsConsumer>(context);
+            cfg.ReceiveEndpoint(rabbitMqSettings.ExceptionQueue, e =>
+            {
+                e.ConfigureConsumer<ExceptionLogsConsumer>(context);
+            });
+
+            cfg.ReceiveEndpoint(rabbitMqSettings.MessageQueue, e =>
+            {
+                e.ConfigureConsumer<MessageLogsConsumer>(context);
+            });
         });
     });
-});
+}
+else
+{
+    // Optional: fallback to in-memory transport so the app still runs
+    builder.Services.AddMassTransit(x =>
+    {
+        x.AddConsumer<ExceptionLogsConsumer>();
+        x.AddConsumer<MessageLogsConsumer>();
+
+        x.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+}
 
 builder.Services.AddAuthentication(options =>
 {

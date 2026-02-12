@@ -6,5 +6,6 @@
         public string Author { get; set; } = string.Empty;
         public string BorrowRecord { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public string Publisher { get; set; } = string.Empty;
     }
 }

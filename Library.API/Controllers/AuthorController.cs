@@ -12,11 +12,11 @@ namespace Library.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Policy = PermissionNames.AuthorManage)]
-    public class AuthorsController : ControllerBase
+    public class AuthorController : ControllerBase
     {
         private readonly IAuthorService _service;
 
-        public AuthorsController(IAuthorService service)
+        public AuthorController(IAuthorService service)
         {
             _service = service;
         }

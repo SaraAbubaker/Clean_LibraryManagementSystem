@@ -1,0 +1,141 @@
+﻿@model Library.Common.DTOs.LibraryDtos.Book.CreateBookDto
+
+@{
+    ViewData["Title"] = "Create Book";
+}
+
+<h2>Create Book</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="CreateBook" method="post" class="needs-validation" novalidate>
+
+    <!-- Title -->
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label">Title</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <!-- Author dropdown + Add button -->
+    <div class="mb-3">
+        <label class="form-label">Author</label>
+        <select asp-for="AuthorId" class="form-select" style="height: 38px;"
+                asp-items="ViewBag.Authors">
+            <option value="">-- Select Author --</option>
+        </select>
+
+        <button type="button"
+                class="btn btn-outline-secondary mt-2"
+                data-bs-toggle="modal"
+                data-bs-target="#addAuthorModal">
+            Add Author
+        </button>
+
+        <span asp-validation-for="AuthorId" class="text-danger"></span>
+    </div>
+
+    <!-- Category dropdown -->
+    <div class="mb-3">
+        <label asp-for="CategoryId" class="form-label">Category</label>
+        <select asp-for="CategoryId" class="form-select" style="height: 38px;"
+                asp-items="ViewBag.Categories">
+            <option value="">-- Select Category --</option>
+        </select>
+        <span asp-validation-for="CategoryId" class="text-danger"></span>
+    </div>
+
+    <!-- Publisher dropdown + Add button -->
+    <div class="mb-3">
+        <label asp-for="PublisherId" class="form-label">Publisher</label>
+        <select asp-for="PublisherId" class="form-select" style="height: 38px;"
+                asp-items="ViewBag.Publishers">
+            <option value="">-- Select Publisher --</option>
+        </select>
+
+        <button type="button"
+                class="btn btn-outline-secondary mt-2"
+                data-bs-toggle="modal"
+                data-bs-target="#addPublisherModal">
+            Add Publisher
+        </button>
+
+        <span asp-validation-for="PublisherId" class="text-danger"></span>
+    </div>
+
+    <!-- Publish Date -->
+    <div class="mb-3">
+        <label asp-for="PublishDate" class="form-label">Publish Date</label>
+        <input asp-for="PublishDate"
+               type="text"
+               class="form-control"
+               placeholder="dd/mm/yyyy"
+               value="@(Model.PublishDate != default ? Model.PublishDate.ToString("dd/MM/yyyy") : "")"
+               onfocus="this.type='date';"
+               onblur="if(!this.value) this.type='text';" />
+        <span asp-validation-for="PublishDate" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Book</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+
+<!-- Add Author Modal -->
+<div class="modal" id="addAuthorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Author</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAuthorForm">
+                    <div class="mb-3">
+                        <label for="newAuthorName" class="form-label">Author Name</label>
+                        <input type="text" class="form-control" id="newAuthorName" />
+                    </div>
+
+                    <div class="modal-footer px-0">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Publisher Modal -->
+<div class="modal" id="addPublisherModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Publisher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPublisherForm">
+                    <div class="mb-3">
+                        <label for="newPublisherName" class="form-label">Publisher Name</label>
+                        <input type="text" class="form-control" id="newPublisherName" />
+                    </div>
+
+                    <div class="modal-footer px-0">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/createBook.js"></script>
+}

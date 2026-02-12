@@ -1,6 +1,7 @@
 ﻿
 using Library.Common.Base;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Library.Entities.Models
 {
@@ -21,6 +22,7 @@ namespace Library.Entities.Models
 
         //Navigation
         public Publisher? Publisher { get; set; }
+        [JsonIgnore]
         public Book? Book { get; set; }
 
         public List<BorrowRecord> BorrowRecords { get; set; } = new();

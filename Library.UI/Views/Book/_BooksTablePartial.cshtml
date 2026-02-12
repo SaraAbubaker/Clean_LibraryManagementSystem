@@ -1,5 +1,13 @@
 ﻿@model Library.UI.Models.BookViewModel
 
+@{
+    bool isCustomer = User.IsInRole("Customer");
+    bool isLibrarian = User.IsInRole("Librarian");
+
+    // Customers see only available books
+    var booksToShow = isCustomer ? Model.Books.Where(b => b.IsAvailable).ToList() : Model.Books;
+}
+
 <div id="booksTableContainer">
     <table class="table table-striped table-bordered table-hover table-responsive">
         <thead class="table-dark">
@@ -10,52 +18,56 @@
                 <th>Category</th>
                 <th>Publisher</th>
                 <th>Publish Date</th>
-                <th>Available</th>
-                <th>Actions</th>
+                @if (isLibrarian)
+                {
+                    <th>Available</th>
+                    <th>Actions</th>
+                }
             </tr>
         </thead>
         <tbody>
             @{
                 int rowNumber = (Model.Page - 1) * Model.PageSize;
             }
-            @foreach (var book in Model.Books)
+            @foreach (var book in booksToShow)
             {
-                <tr id="bookRow-@book.Id"
+               <tr id="bookRow-@book.Id"
                     data-author-name="@book.AuthorName"
-                    data-category="@book.CategoryName"
+                    data-category-id="@book.CategoryId"
                     data-publish-date="@book.PublishDate.ToString("yyyy-MMM-dd")">
                     <td>@(++rowNumber)</td>
                     <td class="title">@book.Title</td>
                     <td>@book.AuthorName</td>
-                    <td>@book.CategoryName</td>
+                    <td>@book.CategoryName</td> 
                     <td class="publisher">@book.PublisherName</td>
                     <td>@book.PublishDate.ToString("dd-MMM-yyyy")</td>
-                    <td>
-                        <span class="badge @(book.IsAvailable ? "bg-success" : "bg-danger")">
-                            @(book.IsAvailable ? "Yes" : "No")
-                        </span>
-                    </td>
-                    <td>
-                        @if (User.IsInRole("Librarian"))
-                        {
+
+                    @if (isLibrarian)
+                    {
+                        <td>
+                            <span class="badge @(book.IsAvailable ? "bg-success" : "bg-danger")">
+                                @(book.IsAvailable ? "Yes" : "No")
+                            </span>
+                        </td>
+                        <td>
                             <a href="#" class="btn btn-sm btn-primary update-btn" data-book-id="@book.Id">Update</a>
                             <button type="button" class="btn btn-sm btn-danger archive-btn"
                                     data-bs-toggle="modal" data-bs-target="#archiveModal" data-book-id="@book.Id">
                                 Archive
                             </button>
-                        }
-                    </td>
+                        </td>
+                    }
                 </tr>
             }
         </tbody>
     </table>
+</div>
 
-    <div class="mb-2">Page @Model.Page of @Model.TotalPages</div>
-
+<div id="booksPagination">
     <!-- Pagination controls -->
     @if (Model.TotalPages > 1)
     {
-        <nav aria-label="Books pagination">
+        <nav aria-label="Books pagination" class="mt-5">
             <ul class="pagination justify-content-center">
 
                 <!-- Previous -->

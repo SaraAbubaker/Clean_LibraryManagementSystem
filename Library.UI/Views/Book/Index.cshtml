@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Books";
+    bool isCustomer = User.IsInRole("Customer");
+    bool isLibrarian = User.IsInRole("Librarian");
 }
 
 <div id="books-page">
@@ -18,7 +20,7 @@
     else if (Model.Books.Any())
     {
         @* Show "Create New Book" button only for Librarian *@
-        @if (User.IsInRole("Librarian"))
+        @if (isLibrarian)
         {
             <div class="mb-3">
                 <a href="@Url.Action("CreateBook")" class="btn btn-success">Create New Book</a>
@@ -37,9 +39,7 @@
             </select>
         </div>
 
-        <div id="booksTableContainer">
-            @await Html.PartialAsync("_BooksTablePartial", Model)
-        </div>
+        @await Html.PartialAsync("_BooksTablePartial", Model)
     }
     else
     {
@@ -47,7 +47,7 @@
     }
 
     @* Only Librarian gets modals *@
-    @if (User.IsInRole("Librarian"))
+    @if (isLibrarian)
     {
         <!-- Archive Confirmation Modal -->
         <div class="modal" id="archiveModal" tabindex="-1">
@@ -105,24 +105,18 @@
                             For now, author editing is disabled in the update modal.
                             *@
 
-                            <!-- Categories (radio, scrollable) -->
+                            <!-- Categories (dropdown) -->
                             <div class="mb-3">
-                                <label class="form-label">Category</label>
-                                <div id="updateCategoriesContainer"
-                                     style="max-height: 180px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.25rem;">
+                                <label for="updateCategorySelect" class="form-label">Category</label>
+                                <select id="updateCategorySelect" class="form-select">
+                                    <option value="">-- Select Category --</option>
                                     @foreach (var category in Model.Categories)
                                     {
-                                        <div class="form-check mb-1">
-                                            <input class="form-check-input update-category-radio"
-                                                   type="radio"
-                                                   name="updateCategory"
-                                                   id="updateCategory-@category.Id"
-                                                   value="@category.Id">
-                                            <label class="form-check-label" for="updateCategory-@category.Id">@category.Name</label>
-                                        </div>
+                                        <option value="@category.Id">@category.Name</option>
                                     }
-                                </div>
+                                </select>
                             </div>
+
 
                             @*
                             TODO: Publisher Update Feature
